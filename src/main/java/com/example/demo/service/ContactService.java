@@ -2,9 +2,13 @@ package com.example.demo.service;
 
 import com.example.demo.model.Contact;
 import com.example.demo.repository.ContactRepository;
+import com.example.demo.repository.ContactSpecification;
 import org.springframework.stereotype.Service;
+import com.example.demo.model.Relation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -61,4 +65,10 @@ public class ContactService {
     public void deleteContact(Long id) {
         contactRepository.deleteById(id);
     }
+
+    public Page<Contact> searchContacts(String name, String phone, String email, Relation relation, Pageable pageable) {
+        Specification<Contact> spec = ContactSpecification.buildSpec(name, phone, email, relation);
+        return contactRepository.findAll(spec, pageable);
+    }
+
 }

@@ -99,4 +99,18 @@ public class ContactController {
     public Relation[] getRelations() {
         return Relation.values();
     }
+
+    @GetMapping("/search")
+    public Page<ContactDTO> searchContacts(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) Relation relation,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        Page<Contact> contacts = contactService.searchContacts(name, phone, email, relation, PageRequest.of(page, size));
+        return contacts.map(ContactMapper::toDTO);
+    }
+
 }
