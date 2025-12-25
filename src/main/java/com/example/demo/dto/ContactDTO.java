@@ -9,15 +9,15 @@ public class ContactDTO {
     @NotBlank(message = "Name is required")
     private String name;
 
-    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
     @NotBlank(message = "Phone is required")
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone must be exactly 10 digits")
     private String phone;
 
     @Email(message = "Invalid email format")
     @NotBlank(message = "Email is required")
     private String email;
 
-
+    @NotNull(message = "Relation is required")
     private Relation relation;
 
 

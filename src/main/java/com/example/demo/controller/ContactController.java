@@ -44,24 +44,10 @@ public class ContactController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createContact(@Valid @RequestBody ContactDTO contactDTO) {
-        try {
-            Contact saved = contactService.saveContact(ContactMapper.toEntity(contactDTO));
-            return ResponseEntity.ok(ContactMapper.toDTO(saved));
-        } catch (DataIntegrityViolationException e) {
-            String rootMessage = e.getRootCause() != null ? e.getRootCause().getMessage() : e.getMessage();
-            String message = "Duplicate entry!";
-
-            if (rootMessage.contains("uk_contact_phone")) {
-                message = "Phone number already exists!";
-            } else if (rootMessage.contains("uk_contact_email")) {
-                message = "Email already exists!";
-            }
-
-            return ResponseEntity.badRequest().body(message);
-        }
+    public ResponseEntity<ContactDTO> createContact(@Valid @RequestBody ContactDTO contactDTO) {
+        Contact saved = contactService.saveContact(ContactMapper.toEntity(contactDTO));
+        return ResponseEntity.ok(ContactMapper.toDTO(saved));
     }
-
 
 
     @GetMapping("/paginated")
@@ -77,14 +63,14 @@ public class ContactController {
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateContact(@PathVariable Long id, @RequestBody ContactDTO contactDTO) {
-        try {
-            Optional<Contact> updated = contactService.updateContact(id, ContactMapper.toEntity(contactDTO));
-            return updated.map(value -> ResponseEntity.ok(ContactMapper.toDTO(value)))
-                    .orElseGet(() -> ResponseEntity.notFound().build());
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage()); // ✅ direct message return
-        }
+    public ResponseEntity<ContactDTO> updateContact(
+            @PathVariable Long id,
+            @Valid @RequestBody ContactDTO contactDTO) {
+
+        Contact updated = contactService.updateContact(id, ContactMapper.toEntity(contactDTO))
+                .orElseThrow(() -> new RuntimeException("Contact not found"));
+
+        return ResponseEntity.ok(ContactMapper.toDTO(updated));
     }
 
 
