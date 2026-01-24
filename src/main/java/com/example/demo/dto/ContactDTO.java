@@ -18,7 +18,8 @@ public class ContactDTO {
     private String email;
 
     @NotNull(message = "Relation is required")
-    private Relation relation;
+    private Long relationId;
+    private String relationName;
 
 
     // Getters & Setters
@@ -34,6 +35,10 @@ public class ContactDTO {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public Relation getRelation() { return relation; }
-    public void setRelation(Relation relation) { this.relation = relation; }
+    public Long getRelationId() { return relationId; }
+    public void setRelationId(Long relationId) { this.relationId = relationId; }
+
+    public String getRelationName() { return relationName; }
+    public void setRelationName(String relationName) { this.relationName = relationName; }
+
 }

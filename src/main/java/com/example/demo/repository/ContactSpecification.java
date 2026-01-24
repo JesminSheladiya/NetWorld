@@ -19,7 +19,7 @@ public class ContactSpecification {
             String name,
             String phone,
             String email,
-            Relation relation
+            Long relationId
     ) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -36,8 +36,8 @@ public class ContactSpecification {
                 predicates.add(cb.like(cb.lower(root.get("email")), "%" + email.toLowerCase() + "%"));
             }
 
-            if (relation != null) {
-                predicates.add(cb.equal(root.get("relation"), relation));
+            if (relationId != null) {
+                predicates.add(cb.equal(root.get("relation"), relationId));
             }
 
             return cb.and(predicates.toArray(new Predicate[0]));

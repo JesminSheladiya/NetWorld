@@ -1,10 +1,13 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.ContactDTO;
+import com.example.demo.mapper.ContactMapper;
 import com.example.demo.model.Contact;
+import com.example.demo.model.Relation;
 import com.example.demo.repository.ContactRepository;
 import com.example.demo.repository.ContactSpecification;
+import com.example.demo.repository.RelationRepository;
 import org.springframework.stereotype.Service;
-import com.example.demo.model.Relation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -17,9 +20,12 @@ import java.util.Optional;
 public class ContactService {
 
     private final ContactRepository contactRepository;
+    private final RelationRepository relationRepository;
 
-    public ContactService(ContactRepository contactRepository) {
+    public ContactService(ContactRepository contactRepository,
+                          RelationRepository relationRepository) {
         this.contactRepository = contactRepository;
+        this.relationRepository = relationRepository;
     }
 
     // Normal list
@@ -36,38 +42,54 @@ public class ContactService {
         return contactRepository.findById(id);
     }
 
-    public Contact saveContact(Contact contact) {
+    public Contact saveContact(ContactDTO dto) {
+        Contact contact = ContactMapper.toEntity(dto);
+
+        if (dto.getRelationId() != null) {
+            Relation relation = relationRepository.findById(dto.getRelationId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid relation ID: " + dto.getRelationId()));
+            contact.setRelation(relation);
+        }
+
         return contactRepository.save(contact);
     }
 
-    public Optional<Contact> updateContact(Long id, Contact newContact) {
+
+    public Optional<Contact> updateContact(Long id, ContactDTO dto) {
         return contactRepository.findById(id).map(contact -> {
 
-            // ✅ Phone duplicate check
-            if (contactRepository.existsByPhoneAndIdNot(newContact.getPhone(), id)) {
+            if (contactRepository.existsByPhoneAndIdNot(dto.getPhone(), id)) {
                 throw new RuntimeException("Phone number already exists!");
             }
-
-            // ✅ Email duplicate check
-            if (contactRepository.existsByEmailAndIdNot(newContact.getEmail(), id)) {
+            if (contactRepository.existsByEmailAndIdNot(dto.getEmail(), id)) {
                 throw new RuntimeException("Email already exists!");
             }
 
-            contact.setName(newContact.getName());
-            contact.setPhone(newContact.getPhone());
-            contact.setEmail(newContact.getEmail());
-            contact.setRelation(newContact.getRelation());
+            // Basic fields update
+            contact.setName(dto.getName());
+            contact.setPhone(dto.getPhone());
+            contact.setEmail(dto.getEmail());
+
+            if (dto.getRelationId() != null) {
+                Relation relation = relationRepository.findById(dto.getRelationId())
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid relation ID"));
+                contact.setRelation(relation);
+            } else {
+                contact.setRelation(null);
+            }
+
             return contactRepository.save(contact);
         });
     }
+
 
 
     public void deleteContact(Long id) {
         contactRepository.deleteById(id);
     }
 
-    public Page<Contact> searchContacts(String name, String phone, String email, Relation relation, Pageable pageable) {
-        Specification<Contact> spec = ContactSpecification.buildSpec(name, phone, email, relation);
+    public Page<Contact> searchContacts(String name, String phone, String email, Long relationId, Pageable pageable) {
+        Specification<Contact> spec = ContactSpecification.buildSpec(name, phone, email, relationId);
         return contactRepository.findAll(spec, pageable);
     }
 

@@ -5,12 +5,12 @@ import com.example.demo.mapper.ContactMapper;
 import com.example.demo.model.Contact;
 import com.example.demo.model.Relation;
 import com.example.demo.service.ContactService;
-import java.util.Optional;
+
+import com.example.demo.service.RelationService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,18 +23,30 @@ import java.util.stream.Collectors;
 public class ContactController {
 
     private final ContactService contactService;
+    private final RelationService relationService;
 
-    public ContactController(ContactService contactService) {
+    public ContactController(ContactService contactService,
+                             RelationService relationService) {
         this.contactService = contactService;
+        this.relationService = relationService;
     }
+
 
     @GetMapping
-    public List<ContactDTO> getAllContacts() {
-        return contactService.getAllContacts()
-                .stream()
-                .map(ContactMapper::toDTO)
+    public ResponseEntity<List<ContactDTO>> getAllContacts() {
+        List<Contact> contacts = contactService.getAllContacts();
+        List<ContactDTO> dtos = contacts.stream()
+                .map(contact -> {
+                    ContactDTO dto = ContactMapper.toDTO(contact);
+                    if (contact.getRelation() != null) {
+                        dto.setRelationName(contact.getRelation().getRelationName());
+                    }
+                    return dto;
+                })
                 .collect(Collectors.toList());
+        return ResponseEntity.ok(dtos);
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ContactDTO> getContactById(@PathVariable Long id) {
@@ -43,9 +55,10 @@ public class ContactController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+
     @PostMapping
-    public ResponseEntity<ContactDTO> createContact(@Valid @RequestBody ContactDTO contactDTO) {
-        Contact saved = contactService.saveContact(ContactMapper.toEntity(contactDTO));
+    public ResponseEntity<?> createContact(@Valid @RequestBody ContactDTO dto) {
+        Contact saved = contactService.saveContact(dto);
         return ResponseEntity.ok(ContactMapper.toDTO(saved));
     }
 
@@ -63,14 +76,16 @@ public class ContactController {
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<ContactDTO> updateContact(
-            @PathVariable Long id,
-            @Valid @RequestBody ContactDTO contactDTO) {
-
-        Contact updated = contactService.updateContact(id, ContactMapper.toEntity(contactDTO))
+    public ResponseEntity<ContactDTO> updateContact(@PathVariable Long id, @Valid @RequestBody ContactDTO dto) {
+        Contact updated = contactService.updateContact(id, dto)
                 .orElseThrow(() -> new RuntimeException("Contact not found"));
 
-        return ResponseEntity.ok(ContactMapper.toDTO(updated));
+        ContactDTO responseDto = ContactMapper.toDTO(updated);
+        if (updated.getRelation() != null) {
+            responseDto.setRelationName(updated.getRelation().getRelationName());
+        }
+
+        return ResponseEntity.ok(responseDto);
     }
 
 
@@ -82,21 +97,24 @@ public class ContactController {
     }
 
     @GetMapping("/relations")
-    public Relation[] getRelations() {
-        return Relation.values();
+    public List<Relation> getRelations() {
+        return relationService.getAll();
     }
+
 
     @GetMapping("/search")
     public Page<ContactDTO> searchContacts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String phone,
             @RequestParam(required = false) String email,
-            @RequestParam(required = false) Relation relation,
+            @RequestParam(required = false) Long relationId,   // id as param
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
-        Page<Contact> contacts = contactService.searchContacts(name, phone, email, relation, PageRequest.of(page, size));
+        Page<Contact> contacts =
+                contactService.searchContacts(name, phone, email, relationId, PageRequest.of(page, size));
         return contacts.map(ContactMapper::toDTO);
     }
+
 
 }
