@@ -13,7 +13,14 @@ public class ContactMapper {
         dto.setName(contact.getName());
         dto.setPhone(contact.getPhone());
         dto.setEmail(contact.getEmail());
-        dto.setRelation(contact.getRelation());
+        if (contact.getRelation() != null && contact.getRelation().getId() != null) {
+            dto.setRelationId(contact.getRelation().getId());
+            dto.setRelationName(contact.getRelation().getRelationName());
+        } else {
+            dto.setRelationId(null);
+            dto.setRelationName(null);
+        }
+
         return dto;
     }
 
@@ -24,7 +31,10 @@ public class ContactMapper {
         contact.setName(dto.getName());
         contact.setPhone(dto.getPhone());
         contact.setEmail(dto.getEmail());
-        contact.setRelation(dto.getRelation());
+        if (dto.getRelationId() != null) {
+            contact.setRelationId(dto.getRelationId());
+        }
+
         return contact;
     }
 }

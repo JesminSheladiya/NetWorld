@@ -24,8 +24,24 @@ public class Contact {
     @Column(nullable = false) // unique
     private String email;
 
-    @Enumerated(EnumType.STRING)
-    private Relation relation;
+//    @JoinColumn(name = "relation_id")      // FK column in contact table
+//    private Long relationId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "relation_id")  // FK column
+    private Relation relation;  // Object!
+
+    public Long getRelationId() {
+        return relation != null ? relation.getId() : null;
+    }
+
+    public void setRelationId(Long relationId) {
+        if (relationId != null) {
+            this.relation = new Relation();
+        } else {
+            this.relation = null;
+        }
+    }
 
     // Getters & Setters
     public Long getId() { return id; }
@@ -40,6 +56,10 @@ public class Contact {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
+//    public Long getRelationId() { return relationId; }
+//    public void setRelationId(Long relationId) { this.relationId = relationId; }
+
     public Relation getRelation() { return relation; }
     public void setRelation(Relation relation) { this.relation = relation; }
+
 }
