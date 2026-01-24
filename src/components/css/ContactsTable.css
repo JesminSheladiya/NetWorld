@@ -1,0 +1,181 @@
+/* ===========================
+   Page Layout & Card
+=========================== */
+.contacts-layout {
+  background: transparent;
+  padding: 40px 20px;
+}
+
+.contacts-content {
+  display: flex;
+  justify-content: center;
+}
+
+.contacts-card {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+.contacts-card .ant-card-body {
+  padding: 0;
+}
+
+.contacts-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ===========================
+   Table
+=========================== */
+.contacts-table .ant-table-thead > tr > th {
+  background: #1e293b !important;
+  color: #38bdf8 !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3) !important;
+  letter-spacing: 0.5px;
+}
+
+.contacts-table .ant-table-tbody > tr > td {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-bottom: 1px solid #1e293b !important;
+  font-size: 14px;
+  padding: 12px 10px;
+}
+
+.contacts-table .ant-table-tbody > tr:hover > td {
+  background: rgba(59, 130, 246, 0.08) !important;
+  transition: background 0.3s ease;
+}
+
+/* ===========================
+   Action Buttons (consistent size)
+=========================== */
+.contacts-table .action-edit,
+.contacts-table .action-delete {
+  height: 32px !important;
+  line-height: 1 !important;
+  padding: 0 8px !important;
+  font-size: 14px !important;
+  border-radius: 6px !important;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+/* Edit hover */
+.contacts-table .action-edit {
+  color: #38bdf8 !important;
+}
+.contacts-table .action-edit:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #fff !important;
+}
+
+/* Delete hover */
+.contacts-table .action-delete {
+  color: #f87171 !important;
+}
+.contacts-table .action-delete:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #fff !important;
+}
+
+/* ===========================
+   Modal
+=========================== */
+.contacts-modal .ant-modal-header {
+  background: transparent !important;
+  border-bottom: none !important;
+}
+
+.contacts-modal .ant-modal-content {
+  background: rgba(17, 25, 40, 0.98) !important;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+}
+
+.contacts-modal .ant-modal-title {
+  color: #38bdf8 !important;
+  font-weight: 600;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+/* ===========================
+   Form & Inputs
+=========================== */
+.contacts-form .ant-form-item-label > label {
+  color: #e2e8f0 !important;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.contacts-form input,
+.contacts-form .ant-select-selector {
+  background: #0f172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  color: #f8fafc !important;
+  border-radius: 6px !important;
+  height: 44px !important;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.contacts-form input:focus,
+.contacts-form .ant-select-focused .ant-select-selector {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
+}
+
+/* ===========================
+   Select Dropdown
+=========================== */
+.ant-select-dropdown {
+  background: #0f172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.ant-select-item {
+  color: #e2e8f0 !important;
+}
+
+.ant-select-item-option-active {
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+.ant-select-item-option-selected {
+  background: rgba(59, 130, 246, 0.25) !important;
+  color: #38bdf8 !important;
+}
+.ant-select-show-search .ant-select-selector input {
+  border: none !important;
+  height: 100% !important;
+  box-shadow: none !important;
+}
+
+/* ===========================
+   Primary Button
+=========================== */
+.ant-btn-primary {
+  height: 36px !important;
+  padding: 0 20px !important;
+  font-size: 14px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+}
+
+.ant-btn-primary:hover {
+  background: #2563eb !important;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+}
