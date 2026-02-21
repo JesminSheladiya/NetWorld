@@ -30,6 +30,9 @@ function ContactsTable() {
     const [total, setTotal] = useState([]);
     const [form] = Form.useForm();
 
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
     const [searchText, setSearchText] = useState("");
     const [messageApi, contextHolder] = message.useMessage();
     const [loading, setLoading] = useState(false);
@@ -90,6 +93,16 @@ function ContactsTable() {
         } catch (error) {
             messageApi.error("Failed to load relations!");
             console.error(error);
+        }
+    };
+
+    const fetchInferredRelations = async () => {
+        try {
+            const response = await http.get(`${API_URL}/inferred-relations`);
+            setSuggestions(response.data);
+            setShowSuggestions(true);
+        } catch (error) {
+            messageApi.error("Failed to load suggestions!");
         }
     };
 
@@ -235,7 +248,7 @@ function ContactsTable() {
                     : (r.relationName || r || 'Unknown'),
                 value: r.id || r
             })),
-            filterSearch: true, 
+            filterSearch: true,
             onFilter: (value, record) => record.relationId === value,
             render: (relation) => {
                 if (!relation) return "—";
@@ -314,6 +327,14 @@ function ContactsTable() {
                                 <Button type="primary" size="middle" onClick={handleAdd}>
                                     Add Details
                                 </Button>
+                                <Button
+                                    type="primary"
+                                    size="middle"
+                                    onClick={fetchInferredRelations}
+                                >
+                                    Relation Suggestions
+                                </Button>
+
                             </Space>
                         </Space>
 
@@ -326,6 +347,36 @@ function ContactsTable() {
                                 className="contacts-table"
                                 size="middle"
                             />
+                            {showSuggestions && suggestions.length > 0 && (
+                                <Card
+                                    title="💡 Inferred Relations (Auto-Suggestions)"
+                                    style={{ marginTop: 24, background: '#1e293b', border: '1px solid #334155' }}
+                                    extra={
+                                        <Button size="small" onClick={() => setShowSuggestions(false)}>
+                                            Close
+                                        </Button>
+                                    }
+                                >
+                                    <Table
+                                        size="small"
+                                        pagination={{ pageSize: 5 }}
+                                        dataSource={suggestions.map((s, i) => ({ ...s, key: i }))}
+                                        columns={[
+                                            { title: 'Person A', dataIndex: 'personAName', key: 'personAName' },
+                                            {
+                                                title: 'Inferred Relation', dataIndex: 'inferredRelation', key: 'inferredRelation',
+                                                render: (rel) => <span style={{ color: '#60a5fa', fontWeight: 'bold' }}>{rel}</span>
+                                            },
+                                            { title: 'Person B', dataIndex: 'personBName', key: 'personBName' },
+                                            {
+                                                title: 'Message', dataIndex: 'message', key: 'message',
+                                                render: (msg) => <span style={{ color: '#86efac' }}>{msg}</span>
+                                            },
+                                        ]}
+                                    />
+                                </Card>
+                            )}
+
                         </Spin>
                     </Card>
 
