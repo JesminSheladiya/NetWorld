@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.ContactDTO;
+import com.example.demo.dto.InferredRelationDTO;
 import com.example.demo.mapper.ContactMapper;
 import com.example.demo.model.Contact;
 import com.example.demo.model.Relation;
@@ -99,6 +100,12 @@ public class ContactController {
     @GetMapping("/relations")
     public List<Relation> getRelations() {
         return relationService.getAll();
+    }
+
+    @GetMapping("/inferred-relations")
+    public ResponseEntity<List<InferredRelationDTO>> getInferredRelations() {
+        List<InferredRelationDTO> suggestions = relationService.inferRelations();
+        return ResponseEntity.ok(suggestions);
     }
 
 
