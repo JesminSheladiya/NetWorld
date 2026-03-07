@@ -14,8 +14,13 @@ import {
     Select,
     message,
     Spin,
+    Tag,
+    Badge,
+    Tooltip,
+    Row,
+    Col,
 } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { EditOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { http } from "../Services/https"; // Use interceptor instance
 import "./css/ContactsTable.css";
@@ -32,10 +37,13 @@ function ContactsTable() {
 
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [suggestLoading, setSuggestLoading] = useState(false);
 
     const [searchText, setSearchText] = useState("");
     const [messageApi, contextHolder] = message.useMessage();
     const [loading, setLoading] = useState(false);
+    const [acceptedSuggestions, setAcceptedSuggestions] = useState([]);
+    const [rejectedSuggestions, setRejectedSuggestions] = useState([]);
 
     const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8080/api/contacts";
 
@@ -97,12 +105,19 @@ function ContactsTable() {
     };
 
     const fetchInferredRelations = async () => {
+        setSuggestLoading(true);
         try {
             const response = await http.get(`${API_URL}/inferred-relations`);
             setSuggestions(response.data);
             setShowSuggestions(true);
+
+            if (response.data.length === 0) {
+                messageApi.info("No inferred relations found!");
+            }
         } catch (error) {
-            messageApi.error("Failed to load suggestions!");
+            messageApi.error("Failed to fetch suggestions!");
+        } finally {
+            setSuggestLoading(false);
         }
     };
 
@@ -331,6 +346,7 @@ function ContactsTable() {
                                     type="primary"
                                     size="middle"
                                     onClick={fetchInferredRelations}
+                                    loading={suggestLoading}
                                 >
                                     Relation Suggestions
                                 </Button>
@@ -347,30 +363,161 @@ function ContactsTable() {
                                 className="contacts-table"
                                 size="middle"
                             />
-                            {showSuggestions && suggestions.length > 0 && (
+                            {showSuggestions && (
                                 <Card
-                                    title="💡 Inferred Relations (Auto-Suggestions)"
-                                    style={{ marginTop: 24, background: '#1e293b', border: '1px solid #334155' }}
+                                    className="suggestions-card"
+                                    title={
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '20px' }}>✨</span>
+                                            <span>Intelligent Relation Suggestions</span>
+                                        </div>
+                                    }
                                     extra={
-                                        <Button size="small" onClick={() => setShowSuggestions(false)}>
+                                        <Button
+                                            type="text"
+                                            size="small"
+                                            onClick={() => setShowSuggestions(false)}
+                                            style={{ color: '#94a3b8' }}
+                                        >
                                             Close
                                         </Button>
                                     }
                                 >
                                     <Table
-                                        size="small"
+                                        className="suggestions-table"
+                                        size="middle"
                                         pagination={{ pageSize: 5 }}
                                         dataSource={suggestions.map((s, i) => ({ ...s, key: i }))}
                                         columns={[
-                                            { title: 'Person A', dataIndex: 'personAName', key: 'personAName' },
                                             {
-                                                title: 'Inferred Relation', dataIndex: 'inferredRelation', key: 'inferredRelation',
-                                                render: (rel) => <span style={{ color: '#60a5fa', fontWeight: 'bold' }}>{rel}</span>
+                                                title: 'Person A',
+                                                dataIndex: 'personAName',
+                                                key: 'personAName',
+                                                width: '25%',
+                                                render: (name) => (
+                                                    <div style={{
+                                                        padding: '8px 12px',
+                                                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                                        borderRadius: '6px',
+                                                        fontWeight: '500',
+                                                        color: '#38bdf8'
+                                                    }}>
+                                                        {name}
+                                                    </div>
+                                                )
                                             },
-                                            { title: 'Person B', dataIndex: 'personBName', key: 'personBName' },
                                             {
-                                                title: 'Message', dataIndex: 'message', key: 'message',
-                                                render: (msg) => <span style={{ color: '#86efac' }}>{msg}</span>
+                                                title: 'Relation',
+                                                dataIndex: 'inferredRelation',
+                                                key: 'inferredRelation',
+                                                width: '20%',
+                                                render: (rel, record) => (
+                                                    <Tooltip title="Inferred relationship">
+                                                        <Tag
+                                                            color="#3b82f6"
+                                                            style={{
+                                                                padding: '6px 12px',
+                                                                fontSize: '13px',
+                                                                fontWeight: '600',
+                                                                borderRadius: '4px',
+                                                                cursor: 'pointer',
+                                                                border: '1px solid #60a5fa'
+                                                            }}
+                                                        >
+                                                            {rel}
+                                                        </Tag>
+                                                    </Tooltip>
+                                                )
+                                            },
+                                            {
+                                                title: 'Person B',
+                                                dataIndex: 'personBName',
+                                                key: 'personBName',
+                                                width: '25%',
+                                                render: (name) => (
+                                                    <div style={{
+                                                        padding: '8px 12px',
+                                                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                                        borderRadius: '6px',
+                                                        fontWeight: '500',
+                                                        color: '#10b981'
+                                                    }}>
+                                                        {name}
+                                                    </div>
+                                                )
+                                            },
+                                            {
+                                                title: 'Confidence',
+                                                dataIndex: 'message',
+                                                key: 'message',
+                                                width: '15%',
+                                                render: (msg) => {
+                                                    let confidence = 'Medium';
+                                                    let color = '#f59e0b';
+                                                    if (msg?.includes('high') || msg?.includes('strong')) {
+                                                        confidence = 'High';
+                                                        color = '#10b981';
+                                                    } else if (msg?.includes('low') || msg?.includes('weak')) {
+                                                        confidence = 'Low';
+                                                        color = '#ef4444';
+                                                    }
+                                                    return (
+                                                        <Badge
+                                                            color={color}
+                                                            text={<span style={{ color: color, fontWeight: '500' }}>{confidence}</span>}
+                                                        />
+                                                    );
+                                                }
+                                            },
+                                            {
+                                                title: 'Actions',
+                                                key: 'actions',
+                                                width: '15%',
+                                                render: (_, record, index) => {
+                                                    const isAccepted = acceptedSuggestions.includes(index);
+                                                    const isRejected = rejectedSuggestions.includes(index);
+
+                                                    return (
+                                                        <Space size="small">
+                                                            <Tooltip title="Accept suggestion">
+                                                                <Button
+                                                                    type={isAccepted ? 'primary' : 'text'}
+                                                                    size="small"
+                                                                    icon={<CheckCircleOutlined />}
+                                                                    onClick={() => {
+                                                                        if (isAccepted) {
+                                                                            setAcceptedSuggestions(acceptedSuggestions.filter(i => i !== index));
+                                                                        } else {
+                                                                            setAcceptedSuggestions([...acceptedSuggestions, index]);
+                                                                            setRejectedSuggestions(rejectedSuggestions.filter(i => i !== index));
+                                                                        }
+                                                                    }}
+                                                                    style={{
+                                                                        color: isAccepted ? '#fff' : '#10b981'
+                                                                    }}
+                                                                />
+                                                            </Tooltip>
+                                                            <Tooltip title="Reject suggestion">
+                                                                <Button
+                                                                    type={isRejected ? 'primary' : 'text'}
+                                                                    size="small"
+                                                                    icon={<CloseCircleOutlined />}
+                                                                    onClick={() => {
+                                                                        if (isRejected) {
+                                                                            setRejectedSuggestions(rejectedSuggestions.filter(i => i !== index));
+                                                                        } else {
+                                                                            setRejectedSuggestions([...rejectedSuggestions, index]);
+                                                                            setAcceptedSuggestions(acceptedSuggestions.filter(i => i !== index));
+                                                                        }
+                                                                    }}
+                                                                    style={{
+                                                                        color: isRejected ? '#fff' : '#ef4444'
+                                                                    }}
+                                                                />
+                                                            </Tooltip>
+                                                        </Space>
+                                                    );
+                                                }
                                             },
                                         ]}
                                     />
