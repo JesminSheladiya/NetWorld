@@ -33,6 +33,7 @@ public class SecurityConfig {
                 .cors(cors -> {}) // CorsConfig apply hoga
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/contacts/inferred-relations").permitAll()
                         .requestMatchers("/api/contacts/**").authenticated()
                         .anyRequest().authenticated()
                 )

@@ -104,8 +104,7 @@ public class ContactController {
 
     @GetMapping("/inferred-relations")
     public ResponseEntity<List<InferredRelationDTO>> getInferredRelations() {
-        List<InferredRelationDTO> suggestions = relationService.inferRelations();
-        return ResponseEntity.ok(suggestions);
+        return ResponseEntity.ok(relationService.inferRelations());
     }
 
 

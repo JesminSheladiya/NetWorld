@@ -1,10 +1,10 @@
 package com.example.demo.dto;
 
 public class InferredRelationDTO {
-    private String personAName;   // "Ramesh"
-    private String personBName;   // "Suresh"
-    private String inferredRelation; // "Father"
-    private String message;       // "Ramesh is Father of Suresh"
+    private String personAName;
+    private String personBName;
+    private String inferredRelation;
+    private String message;
 
     public InferredRelationDTO(String personAName, String personBName, String inferredRelation) {
         this.personAName = personAName;
