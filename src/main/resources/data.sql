@@ -28,9 +28,14 @@ INSERT INTO relations (relation_name, generation_level, gender, relation_categor
 ('Husband',        0,   'M', 'SPOUSE'),
 ('Wife',           0,   'F', 'SPOUSE'),
 ('Nephew',        -1,   'M', 'OTHER'),
-('Niece',         -1,   'F', 'OTHER')
+('Niece',         -1,   'F', 'OTHER'),
+('Father-in-law',   1, 'M', 'INLAW'),
+('Mother-in-law',   1, 'F', 'INLAW'),
+('Son-in-law',     -1, 'M', 'INLAW'),
+('Daughter-in-law',-1, 'F', 'INLAW'),
+('Brother-in-law',  0, 'M', 'INLAW'),
+('Sister-in-law',   0, 'F', 'INLAW')
 ON CONFLICT (relation_name) DO NOTHING;
-
 
 UPDATE relations SET relation_category = 'PARENT'      WHERE LOWER(relation_name) IN ('father', 'mother')                           AND (relation_category IS NULL OR relation_category = 'OTHER');
 UPDATE relations SET relation_category = 'SIBLING'     WHERE LOWER(relation_name) IN ('brother', 'sister')                          AND (relation_category IS NULL OR relation_category = 'OTHER');

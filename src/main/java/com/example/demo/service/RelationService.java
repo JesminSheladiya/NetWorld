@@ -19,63 +19,58 @@ public class RelationService {
     private static final Map<String, String> INFERENCE_MAP = new HashMap<>();
 
     static {
-        // ✅ SIBLING + SIBLING → siblings of each other (NEVER husband/wife)
+        // ✅ SIBLING + SIBLING → siblings of each other
         INFERENCE_MAP.put("SIBLING_SIBLING_M", "Brother");
         INFERENCE_MAP.put("SIBLING_SIBLING_F", "Sister");
         INFERENCE_MAP.put("SIBLING_SIBLING_N", "Brother");
 
-        // ✅ PARENT + PARENT → spouses (Father + Mother = Husband/Wife)
-        INFERENCE_MAP.put("PARENT_PARENT_M",   "Husband");
-        INFERENCE_MAP.put("PARENT_PARENT_F",   "Wife");
+        // ✅ PARENT + PARENT → spouses
+        INFERENCE_MAP.put("PARENT_PARENT_M", "Husband");
+        INFERENCE_MAP.put("PARENT_PARENT_F", "Wife");
 
-        // ✅ PARENT + SIBLING → parent is parent of sibling too
-        INFERENCE_MAP.put("PARENT_SIBLING_M",  "Father");
-        INFERENCE_MAP.put("PARENT_SIBLING_F",  "Mother");
+        // ✅ PARENT + SIBLING → parent hai sibling ka bhi
+        INFERENCE_MAP.put("PARENT_SIBLING_M", "Father");
+        INFERENCE_MAP.put("PARENT_SIBLING_F", "Mother");
 
         // ✅ SIBLING + PARENT → sibling is child of parent
-        INFERENCE_MAP.put("SIBLING_PARENT_M",  "Son");
-        INFERENCE_MAP.put("SIBLING_PARENT_F",  "Daughter");
+        INFERENCE_MAP.put("SIBLING_PARENT_M", "Son");
+        INFERENCE_MAP.put("SIBLING_PARENT_F", "Daughter");
 
-        // ✅ CHILD + CHILD → siblings of each other
-        INFERENCE_MAP.put("CHILD_CHILD_M",     "Brother");
-        INFERENCE_MAP.put("CHILD_CHILD_F",     "Sister");
-        INFERENCE_MAP.put("CHILD_CHILD_N",     "Brother");
+        // ✅ CHILD + CHILD → siblings
+        INFERENCE_MAP.put("CHILD_CHILD_M", "Brother");
+        INFERENCE_MAP.put("CHILD_CHILD_F", "Sister");
+        INFERENCE_MAP.put("CHILD_CHILD_N", "Brother");
 
-        // ✅ PARENT + CHILD → grandparent of child
-        INFERENCE_MAP.put("PARENT_CHILD_M",    "Grandfather");
-        INFERENCE_MAP.put("PARENT_CHILD_F",    "Grandmother");
-
-        // ✅ CHILD + PARENT → grandchild of parent
-        INFERENCE_MAP.put("CHILD_PARENT_M",    "Grandson");
-        INFERENCE_MAP.put("CHILD_PARENT_F",    "Granddaughter");
-
-        // ✅ GRANDPARENT + PARENT → great-grandparent (skip if not in DB)
-        INFERENCE_MAP.put("GRANDPARENT_PARENT_M", "Grandfather");
-        INFERENCE_MAP.put("GRANDPARENT_PARENT_F", "Grandmother");
-
-        // ✅ GRANDPARENT + SIBLING → grandparent of sibling
+        // ✅ GRANDPARENT + SIBLING → Grandfather/Grandmother of sibling ✅
         INFERENCE_MAP.put("GRANDPARENT_SIBLING_M", "Grandfather");
         INFERENCE_MAP.put("GRANDPARENT_SIBLING_F", "Grandmother");
 
+        // ✅ GRANDPARENT + PARENT(M=Father) → dada IS father ka baap = "Father"
+        INFERENCE_MAP.put("GRANDPARENT_PARENT_M_PARENT_M", "Father");
+        // ✅ GRANDPARENT + PARENT(F=Mother) → dada IS mother ka sasur = "Father-in-law"
+        INFERENCE_MAP.put("GRANDPARENT_PARENT_M_PARENT_F", "Father-in-law");
+        INFERENCE_MAP.put("GRANDPARENT_PARENT_F_PARENT_M", "Mother");
+        INFERENCE_MAP.put("GRANDPARENT_PARENT_F_PARENT_F", "Mother-in-law");
+
+        // ✅ PARENT + CHILD → grandparent
+        INFERENCE_MAP.put("PARENT_CHILD_M", "Grandfather");
+        INFERENCE_MAP.put("PARENT_CHILD_F", "Grandmother");
+
+        // ✅ CHILD + PARENT → grandchild
+        INFERENCE_MAP.put("CHILD_PARENT_M", "Grandson");
+        INFERENCE_MAP.put("CHILD_PARENT_F", "Granddaughter");
+
+        // ✅ SPOUSE + SIBLING → parent of sibling
+        INFERENCE_MAP.put("SPOUSE_SIBLING_M", "Father");
+        INFERENCE_MAP.put("SPOUSE_SIBLING_F", "Mother");
+
+        // ✅ SIBLING + CHILD → uncle/aunt
+        INFERENCE_MAP.put("SIBLING_CHILD_M", "Uncle");
+        INFERENCE_MAP.put("SIBLING_CHILD_F", "Aunt");
+
         // ✅ SPOUSE + CHILD → co-parent
-        INFERENCE_MAP.put("SPOUSE_CHILD_M",    "Father");
-        INFERENCE_MAP.put("SPOUSE_CHILD_F",    "Mother");
-
-        // ✅ CHILD + SPOUSE → child of spouse too
-        INFERENCE_MAP.put("CHILD_SPOUSE_M",    "Son");
-        INFERENCE_MAP.put("CHILD_SPOUSE_F",    "Daughter");
-
-        // ✅ SPOUSE + SIBLING → parent of sibling (step-parent scenario)
-        INFERENCE_MAP.put("SPOUSE_SIBLING_M",  "Father");
-        INFERENCE_MAP.put("SPOUSE_SIBLING_F",  "Mother");
-
-        // ✅ SIBLING + CHILD → uncle/aunt (if in DB, else skip)
-        INFERENCE_MAP.put("SIBLING_CHILD_M",   "Uncle");
-        INFERENCE_MAP.put("SIBLING_CHILD_F",   "Aunt");
-
-        // ✅ CHILD + SIBLING → nephew/niece (add if you have these relations)
-        // INFERENCE_MAP.put("CHILD_SIBLING_M", "Nephew");
-        // INFERENCE_MAP.put("CHILD_SIBLING_F", "Niece");
+        INFERENCE_MAP.put("SPOUSE_CHILD_M", "Father");
+        INFERENCE_MAP.put("SPOUSE_CHILD_F", "Mother");
     }
 
     public RelationService(RelationRepository relationRepository,
@@ -103,15 +98,23 @@ public class RelationService {
                 Relation relB = contactB.getRelation();
                 if (relB == null || relB.getRelationCategory() == null) continue;
 
-                String categoryA = relA.getRelationCategory();   // e.g. "PARENT"
-                String categoryB = relB.getRelationCategory();   // e.g. "SIBLING"
+                String categoryA = relA.getRelationCategory();
+                String categoryB = relB.getRelationCategory();
                 String genderA   = relA.getGender() != null ? relA.getGender() : "N";
+                String genderB   = relB.getGender() != null ? relB.getGender() : "N";
 
                 if (categoryA.equals("OTHER") || categoryB.equals("OTHER")) continue;
 
-                String mapKey = categoryA + "_" + categoryB + "_" + genderA;
-                String inferredName = INFERENCE_MAP.get(mapKey);
+                String mapKey;
+                if (categoryA.equals("GRANDPARENT") && categoryB.equals("PARENT")) {
 
+                    mapKey = "GRANDPARENT_PARENT_" + genderA + "_PARENT_" + genderB;
+                } else {
+                    // Normal key
+                    mapKey = categoryA + "_" + categoryB + "_" + genderA;
+                }
+
+                String inferredName = INFERENCE_MAP.get(mapKey);
                 if (inferredName == null) continue;
 
                 Optional<Relation> inferredRelation =
