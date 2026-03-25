@@ -6,8 +6,14 @@ import java.util.Optional;
 
 public interface RelationRepository extends JpaRepository<Relation, Long> {
 
-    Optional<Relation> findFirstByGenerationLevelAndGender(
-            Integer generationLevel, String gender);
-
     Optional<Relation> findByRelationNameIgnoreCase(String relationName);
+
+
+    Optional<Relation> findFirstByGenerationLevelAndGenderAndIsBlood(
+            Integer generationLevel, String gender, Boolean isBlood
+    );
+
+    Optional<Relation> findFirstByGenerationLevelAndIsBlood(
+            Integer generationLevel, Boolean isBlood
+    );
 }
