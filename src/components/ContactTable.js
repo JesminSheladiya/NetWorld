@@ -155,64 +155,80 @@ function ContactsTable() {
         }
     };
 
-    const handleOk = () => {
-        form
-            .validateFields()
-            .then(async (values) => {
-                setIsModalOpen(false);
-                setLoading(true);
+const handleOk = () => {
+    form
+        .validateFields()
+        .then(async (values) => {
+            setIsModalOpen(false);
+            setLoading(true);
 
-                try {
-                    let response;
-                    if (editingRecord) {
-                        response = await http.put(`${API_URL}/${editingRecord.id}`, values);
-                        const updatedContact = response.data;
-                        const relationObj = relations.find(r => r.id == updatedContact.relationId);
-
-                        setDataSource((prev) =>
-                            prev.map((item) =>
-                                item.id === editingRecord.id
-                                    ? {
-                                        ...updatedContact,
-                                        key: updatedContact.id,
-                                        relation: relationObj || {
-                                            id: updatedContact.relationId,
-                                            relationName: `Relation ${updatedContact.relationId}`
-                                        }
+            try {
+                let response;
+                if (editingRecord) {
+                    response = await http.put(`${API_URL}/${editingRecord.id}`, values);
+                    const updatedContact = response.data;
+                    const relationObj = relations.find(r => r.id == updatedContact.relationId);
+                    setDataSource((prev) =>
+                        prev.map((item) =>
+                            item.id === editingRecord.id
+                                ? {
+                                    ...updatedContact,
+                                    key: updatedContact.id,
+                                    relation: relationObj || {
+                                        id: updatedContact.relationId,
+                                        relationName: `Relation ${updatedContact.relationId}`
                                     }
-                                    : item
-                            )
-                        );
-                        messageApi.success("Contact updated successfully!");
-                    }
-                    else {
-                        response = await http.post(API_URL, values);
-                        const newContact = response.data;
-                        const relationObj = relations.find(r => r.id == newContact.relationId);
-
-                        const contactWithRelation = {
-                            ...newContact,
-                            key: newContact.id,
-                            relation: relationObj || {
-                                id: newContact.relationId,
-                                relationName: `Relation ${newContact.relationId}`
-                            }
-                        };
-
-                        setDataSource((prev) => [...prev, contactWithRelation]);
-                        messageApi.success("Contact added successfully!");
-                    }
-                    form.resetFields();
-                } catch (error) {
-                    // error handling...
-                } finally {
-                    setLoading(false);
+                                }
+                                : item
+                        )
+                    );
+                    messageApi.success("Contact updated successfully!");
+                } else {
+                    response = await http.post(API_URL, values);
+                    const newContact = response.data;
+                    const relationObj = relations.find(r => r.id == newContact.relationId);
+                    const contactWithRelation = {
+                        ...newContact,
+                        key: newContact.id,
+                        relation: relationObj || {
+                            id: newContact.relationId,
+                            relationName: `Relation ${newContact.relationId}`
+                        }
+                    };
+                    setDataSource((prev) => [...prev, contactWithRelation]);
+                    messageApi.success("Contact added successfully!");
                 }
-            })
-            .catch(() => {
-                messageApi.error("Please fill all required fields!");
-            });
-    };
+                form.resetFields();
+
+            } catch (error) {
+                console.error("Full error:", error);
+                console.error("Response data:", error.response?.data);
+
+                const backendMsg = error.response?.data?.message
+                    || error.response?.data?.errors?.join(", ")
+                    || error.response?.data
+                    || "Something went wrong!";
+
+                if (error.response?.status === 400) {
+                    messageApi.error(`Validation Error: ${JSON.stringify(backendMsg)}`);
+                } else if (error.response?.status === 409) {
+                    messageApi.error("Phone number already exists!");
+                } else if (error.response?.status === 401 || error.response?.status === 403) {
+                    messageApi.error("Session expired. Please login again!");
+                    localStorage.clear();
+                } else {
+                    messageApi.error(`Error: ${backendMsg}`);
+                }
+
+                setIsModalOpen(true);
+            } finally {
+                setLoading(false);
+            }
+        })
+        .catch(() => {
+            messageApi.error("Please fill all required fields!");
+        });
+};
 
 
     // Filtered data for search
