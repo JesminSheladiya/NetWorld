@@ -22,6 +22,12 @@ public class Relation {
     @Column(name = "relation_category", length = 20)
     private String relationCategory = "OTHER";
 
+    @Column(name = "is_blood", nullable = false)
+    private Boolean isBlood = true;
+
+    public Boolean getIsBlood() { return isBlood; }
+    public void setIsBlood(Boolean isBlood) { this.isBlood = isBlood; }
+
     public Relation() {}
 
     public Relation(String relationName) {
