@@ -19,6 +19,7 @@ import {
     Tooltip,
     Row,
     Col,
+    Avatar,
 } from "antd";
 import { EditOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
@@ -44,6 +45,9 @@ function ContactsTable() {
     const [loading, setLoading] = useState(false);
     const [acceptedSuggestions, setAcceptedSuggestions] = useState([]);
     const [rejectedSuggestions, setRejectedSuggestions] = useState([]);
+
+    const [uploadedImage, setUploadedImage] = useState(null);
+    const [imageFile, setImageFile] = useState(null);
 
     const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8080/api/contacts";
 
@@ -124,6 +128,9 @@ function ContactsTable() {
     const handleAdd = () => {
         setEditingRecord(null);
         form.resetFields();
+
+        setUploadedImage(null);
+        setImageFile(null);
         setIsModalOpen(true);
     };
 
@@ -137,6 +144,9 @@ function ContactsTable() {
 
         setEditingRecord(record);
         form.setFieldsValue(formValues);
+
+        setUploadedImage(record.profilePicture || null);
+        setImageFile(null);
         setIsModalOpen(true);
     };
 
@@ -155,80 +165,127 @@ function ContactsTable() {
         }
     };
 
-const handleOk = () => {
-    form
-        .validateFields()
-        .then(async (values) => {
-            setIsModalOpen(false);
-            setLoading(true);
+    const handleImageUpload = async (file, contactId) => {
+        if (!file) return;
 
-            try {
-                let response;
-                if (editingRecord) {
-                    response = await http.put(`${API_URL}/${editingRecord.id}`, values);
-                    const updatedContact = response.data;
-                    const relationObj = relations.find(r => r.id == updatedContact.relationId);
-                    setDataSource((prev) =>
-                        prev.map((item) =>
-                            item.id === editingRecord.id
-                                ? {
-                                    ...updatedContact,
-                                    key: updatedContact.id,
-                                    relation: relationObj || {
-                                        id: updatedContact.relationId,
-                                        relationName: `Relation ${updatedContact.relationId}`
-                                    }
-                                }
-                                : item
-                        )
-                    );
-                    messageApi.success("Contact updated successfully!");
-                } else {
-                    response = await http.post(API_URL, values);
-                    const newContact = response.data;
-                    const relationObj = relations.find(r => r.id == newContact.relationId);
+        if (!file.type.startsWith("image/")) {
+            messageApi.error("Only image files allowed!");
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            messageApi.error("Image size must be less than 5MB!");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const response = await http.post(
+                `${API_URL}/${contactId}/upload-picture`,
+                formData,
+                {
+                    headers: { "Content-Type": "multipart/form-data" },
+                }
+            );
+
+            setDataSource((prev) =>
+                prev.map((item) =>
+                    item.id === contactId
+                        ? { ...item, profilePicture: response.data.profilePicture }
+                        : item
+                )
+            );
+            messageApi.success("Profile picture updated!");
+        } catch (error) {
+            messageApi.error("Upload failed!");
+            console.error(error);
+        }
+    };
+
+    const handleOk = () => {
+        form
+            .validateFields()
+            .then(async (values) => {
+                setIsModalOpen(false);
+                setLoading(true);
+
+                try {
+                    let response;
+                    let savedContact;
+
+                    if (editingRecord) {
+                        response = await http.put(`${API_URL}/${editingRecord.id}`, values);
+                        savedContact = response.data;
+                    } else {
+                        response = await http.post(API_URL, values);
+                        savedContact = response.data;
+                    }
+
+                    if (imageFile) {
+                        const formData = new FormData();
+                        formData.append("file", imageFile);
+                        const uploadRes = await http.post(
+                            `${API_URL}/${savedContact.id}/upload-picture`,
+                            formData,
+                            { headers: { "Content-Type": "multipart/form-data" } }
+                        );
+                        savedContact = uploadRes.data;
+                    }
+
+                    const relationObj = relations.find(r => r.id == savedContact.relationId);
                     const contactWithRelation = {
-                        ...newContact,
-                        key: newContact.id,
+                        ...savedContact,
+                        key: savedContact.id,
                         relation: relationObj || {
-                            id: newContact.relationId,
-                            relationName: `Relation ${newContact.relationId}`
+                            id: savedContact.relationId,
+                            relationName: `Relation ${savedContact.relationId}`
                         }
                     };
-                    setDataSource((prev) => [...prev, contactWithRelation]);
-                    messageApi.success("Contact added successfully!");
+
+                    if (editingRecord) {
+                        setDataSource((prev) =>
+                            prev.map((item) =>
+                                item.id === editingRecord.id ? contactWithRelation : item
+                            )
+                        );
+                        messageApi.success("Contact updated successfully!");
+                    } else {
+                        setDataSource((prev) => [...prev, contactWithRelation]);
+                        messageApi.success("Contact added successfully!");
+                    }
+
+                    form.resetFields();
+                    setUploadedImage(null);
+                    setImageFile(null);
+
+                } catch (error) {
+                    console.error("Full error:", error);
+                    const backendMsg = error.response?.data?.message
+                        || error.response?.data?.errors?.join(", ")
+                        || error.response?.data
+                        || "Something went wrong!";
+
+                    if (error.response?.status === 400) {
+                        messageApi.error(`Validation Error: ${JSON.stringify(backendMsg)}`);
+                    } else if (error.response?.status === 409) {
+                        messageApi.error("Phone number already exists!");
+                    } else if (error.response?.status === 401 || error.response?.status === 403) {
+                        messageApi.error("Session expired. Please login again!");
+                        localStorage.clear();
+                    } else {
+                        messageApi.error(`Error: ${backendMsg}`);
+                    }
+                    setIsModalOpen(true);
+                } finally {
+                    setLoading(false);
                 }
-                form.resetFields();
-
-            } catch (error) {
-                console.error("Full error:", error);
-                console.error("Response data:", error.response?.data);
-
-                const backendMsg = error.response?.data?.message
-                    || error.response?.data?.errors?.join(", ")
-                    || error.response?.data
-                    || "Something went wrong!";
-
-                if (error.response?.status === 400) {
-                    messageApi.error(`Validation Error: ${JSON.stringify(backendMsg)}`);
-                } else if (error.response?.status === 409) {
-                    messageApi.error("Phone number already exists!");
-                } else if (error.response?.status === 401 || error.response?.status === 403) {
-                    messageApi.error("Session expired. Please login again!");
-                    localStorage.clear();
-                } else {
-                    messageApi.error(`Error: ${backendMsg}`);
-                }
-
-                setIsModalOpen(true);
-            } finally {
-                setLoading(false);
-            }
-        })
-        .catch(() => {
-            messageApi.error("Please fill all required fields!");
-        });
-};
+            })
+            .catch(() => {
+                messageApi.error("Please fill all required fields!");
+            });
+    };
 
 
     // Filtered data for search
@@ -251,6 +308,26 @@ const handleOk = () => {
 
 
     const columns = [
+        {
+            title: "Photo",
+            dataIndex: "profilePicture",
+            key: "profilePicture",
+            width: 70,
+            render: (pic, record) => (
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                    <Avatar
+                        size={45}
+                        src={pic || null}
+                        style={{
+                            backgroundColor: pic ? "transparent" : "#3b82f6",
+                            fontSize: "18px",
+                        }}
+                    >
+                        {!pic && record.name?.charAt(0).toUpperCase()}
+                    </Avatar>
+                </div>
+            ),
+        },
         {
             title: "Name",
             dataIndex: "name",
@@ -553,6 +630,51 @@ const handleOk = () => {
                         className="contacts-modal"
                     >
                         <Form form={form} layout="vertical" className="contacts-form">
+                            <Form.Item label="Profile Picture">
+                                <div className="profile-upload-wrapper">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        id="modal-upload-input"
+                                        style={{ display: "none" }}
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (!file) return;
+                                            if (!file.type.startsWith("image/")) {
+                                                messageApi.error("Only image files allowed!");
+                                                return;
+                                            }
+                                            if (file.size > 5 * 1024 * 1024) {
+                                                messageApi.error("Image must be less than 5MB!");
+                                                return;
+                                            }
+                                            setImageFile(file);
+                                            const reader = new FileReader();
+                                            reader.onload = (ev) => setUploadedImage(ev.target.result);
+                                            reader.readAsDataURL(file);
+                                        }}
+                                    />
+                                    <label htmlFor="modal-upload-input" className="profile-avatar-label">
+                                        <Avatar
+                                            size={80}
+                                            src={uploadedImage || null}
+                                            style={{
+                                                backgroundColor: uploadedImage ? "transparent" : "#3b82f6",
+                                                fontSize: "28px",
+                                            }}
+                                        >
+                                            {!uploadedImage && (form.getFieldValue("name")?.charAt(0).toUpperCase() || "?")}
+                                        </Avatar>
+                                        <div className="profile-avatar-overlay">
+                                            <EditOutlined />
+                                        </div>
+                                    </label>
+                                    <div className="profile-upload-help">
+                                        Click avatar to upload or change profile picture
+                                    </div>
+                                </div>
+                            </Form.Item>
+
                             <Form.Item
                                 name="name"
                                 label="Name"
