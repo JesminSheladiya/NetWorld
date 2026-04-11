@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS contact (
     phone VARCHAR(20) NOT NULL,
     email VARCHAR(150) NOT NULL,
     relation_id BIGINT,
+    profile_picture VARCHAR(255),
 
     CONSTRAINT uk_contact_phone UNIQUE (phone),
     CONSTRAINT uk_contact_email UNIQUE (email),

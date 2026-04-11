@@ -24,6 +24,9 @@ public class Contact {
     @Column(nullable = false) // unique
     private String email;
 
+    @Column(name = "profile_picture")
+    private String profilePicture;
+
 //    @JoinColumn(name = "relation_id")      // FK column in contact table
 //    private Long relationId;
 
@@ -55,6 +58,10 @@ public class Contact {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public String getProfilePicture() { return profilePicture; }
+    public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
+
 
 //    public Long getRelationId() { return relationId; }
 //    public void setRelationId(Long relationId) { this.relationId = relationId; }

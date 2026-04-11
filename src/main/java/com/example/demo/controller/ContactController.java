@@ -14,6 +14,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -61,6 +63,22 @@ public class ContactController {
     public ResponseEntity<?> createContact(@Valid @RequestBody ContactDTO dto) {
         Contact saved = contactService.saveContact(dto);
         return ResponseEntity.ok(ContactMapper.toDTO(saved));
+    }
+
+    @PostMapping("/{id}/upload-picture")
+    public ResponseEntity<?> uploadPicture(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ResponseEntity.badRequest().body("Only image files allowed!");
+            }
+            ContactDTO updated = contactService.uploadProfilePicture(id, file);
+            return ResponseEntity.ok(updated);
+        } catch (IOException e) {
+            return ResponseEntity.internalServerError().body("Upload failed!");
+        }
     }
 
 
