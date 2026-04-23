@@ -20,10 +20,12 @@ import {
     Row,
     Col,
     Avatar,
+    Upload,
 } from "antd";
 import { EditOutlined, DeleteOutlined, CheckCircleOutlined, CloseCircleOutlined, ArrowRightOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
-import { http } from "../Services/https"; // Use interceptor instance
+import ImgCrop from 'antd-img-crop';
+import { http } from "../Services/https";
 import "./css/ContactsTable.css";
 
 const { Content } = Layout;
@@ -45,6 +47,8 @@ function ContactsTable() {
     const [loading, setLoading] = useState(false);
     const [acceptedSuggestions, setAcceptedSuggestions] = useState([]);
     const [rejectedSuggestions, setRejectedSuggestions] = useState([]);
+    const [imageModalVisible, setImageModalVisible] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const [uploadedImage, setUploadedImage] = useState(null);
     const [imageFile, setImageFile] = useState(null);
@@ -70,7 +74,7 @@ function ContactsTable() {
     const fetchContacts = async () => {
         setLoading(true);
         try {
-            // example: search + pagination
+
             const response = await http.get(`${API_URL}`);
             const contactsWithRelations = response.data.map(item => {
                 const relationObj = relations.find(r => r.id == item.relationId);
@@ -100,7 +104,7 @@ function ContactsTable() {
 
     const fetchRelations = async () => {
         try {
-            const response = await http.get(`${API_URL}/relations`); // Bearer token auto-added
+            const response = await http.get(`${API_URL}/relations`);
             setRelations(response.data);
         } catch (error) {
             messageApi.error("Failed to load relations!");
@@ -154,7 +158,7 @@ function ContactsTable() {
     const handleDelete = async (id) => {
         setLoading(true);
         try {
-            await http.delete(`${API_URL}/${id}`); // Bearer token auto-added
+            await http.delete(`${API_URL}/${id}`);
             setDataSource(dataSource.filter((item) => item.key !== id));
             messageApi.success("Contact deleted successfully!");
         } catch (error) {
@@ -200,6 +204,25 @@ function ContactsTable() {
             messageApi.success("Profile picture updated!");
         } catch (error) {
             messageApi.error("Upload failed!");
+            console.error(error);
+        }
+    };
+
+    const handleRemoveImage = async (contactId) => {
+        try {
+            const response = await http.delete(`${API_URL}/${contactId}/remove-picture`);
+
+
+            setDataSource((prev) =>
+                prev.map((item) =>
+                    item.id === contactId
+                        ? { ...item, profilePicture: null }
+                        : item
+                )
+            );
+            messageApi.success("Profile picture removed!");
+        } catch (error) {
+            messageApi.error("Remove failed!");
             console.error(error);
         }
     };
@@ -288,7 +311,7 @@ function ContactsTable() {
     };
 
 
-    // Filtered data for search
+
     const filteredData = dataSource.filter((item) => {
         const text = searchText.toLowerCase();
 
@@ -315,16 +338,28 @@ function ContactsTable() {
             width: 70,
             render: (pic, record) => (
                 <div style={{ display: "flex", justifyContent: "center" }}>
-                    <Avatar
-                        size={45}
-                        src={pic || null}
-                        style={{
-                            backgroundColor: pic ? "transparent" : "#3b82f6",
-                            fontSize: "18px",
+                    <div
+                        style={{ cursor: pic ? "pointer" : "default" }}
+                        onClick={() => {
+                            if (pic) {
+                                setSelectedImage(pic);
+                                setImageModalVisible(true);
+                            }
                         }}
                     >
-                        {!pic && record.name?.charAt(0).toUpperCase()}
-                    </Avatar>
+                        <Tooltip title={pic ? "Click to view full image" : ""}>
+                            <Avatar
+                                size={45}
+                                src={pic || null}
+                                style={{
+                                    backgroundColor: pic ? "transparent" : "#3b82f6",
+                                    fontSize: "18px",
+                                }}
+                            >
+                                {!pic && record.name?.charAt(0).toUpperCase()}
+                            </Avatar>
+                        </Tooltip>
+                    </div>
                 </div>
             ),
         },
@@ -373,15 +408,17 @@ function ContactsTable() {
             key: "actions",
             render: (_, record) => (
                 <Space>
-                    <Button
-                        type="text"
-                        size="middle"
-                        icon={<EditOutlined />}
-                        className="action-edit"
-                        onClick={() => handleEdit(record)}
-                    >
-                        Edit
-                    </Button>
+                    <Tooltip title="Edit contact">
+                        <Button
+                            type="text"
+                            size="middle"
+                            icon={<EditOutlined />}
+                            className="action-edit"
+                            onClick={() => handleEdit(record)}
+                        >
+                            Edit
+                        </Button>
+                    </Tooltip>
                     <Popconfirm
                         title="Are you sure you want to delete this record?"
                         okText="Yes"
@@ -617,6 +654,37 @@ function ContactsTable() {
                                 </Card>
                             )}
 
+                            {/* Image Viewer Modal - WhatsApp/Instagram DP Style */}
+                            <Modal
+                                title={null}
+                                open={imageModalVisible}
+                                onCancel={() => setImageModalVisible(false)}
+                                footer={null}
+                                closable={false}
+                                centered
+                                className="image-viewer-modal-circle"
+                            >
+                                {selectedImage && (
+                                    <div style={{
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                    }}>
+                                        <img
+                                            src={selectedImage}
+                                            alt="Profile full view"
+                                            style={{
+                                                objectFit: 'cover',
+                                                borderRadius: '50%',
+                                                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                                                border: '4px solid rgba(255, 255, 255, 0.1)'
+                                            }}
+                                            onClick={() => setImageModalVisible(false)}
+                                        />
+                                    </div>
+                                )}
+                            </Modal>
+
                         </Spin>
                     </Card>
 
@@ -632,45 +700,61 @@ function ContactsTable() {
                         <Form form={form} layout="vertical" className="contacts-form">
                             <Form.Item label="Profile Picture">
                                 <div className="profile-upload-wrapper">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        id="modal-upload-input"
-                                        style={{ display: "none" }}
-                                        onChange={(e) => {
-                                            const file = e.target.files[0];
-                                            if (!file) return;
-                                            if (!file.type.startsWith("image/")) {
-                                                messageApi.error("Only image files allowed!");
-                                                return;
-                                            }
-                                            if (file.size > 5 * 1024 * 1024) {
-                                                messageApi.error("Image must be less than 5MB!");
-                                                return;
-                                            }
-                                            setImageFile(file);
-                                            const reader = new FileReader();
-                                            reader.onload = (ev) => setUploadedImage(ev.target.result);
-                                            reader.readAsDataURL(file);
-                                        }}
-                                    />
-                                    <label htmlFor="modal-upload-input" className="profile-avatar-label">
-                                        <Avatar
-                                            size={80}
-                                            src={uploadedImage || null}
-                                            style={{
-                                                backgroundColor: uploadedImage ? "transparent" : "#3b82f6",
-                                                fontSize: "28px",
-                                            }}
-                                        >
-                                            {!uploadedImage && (form.getFieldValue("name")?.charAt(0).toUpperCase() || "?")}
-                                        </Avatar>
-                                        <div className="profile-avatar-overlay">
-                                            <EditOutlined />
-                                        </div>
-                                    </label>
-                                    <div className="profile-upload-help">
-                                        Click avatar to upload or change profile picture
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                                        <ImgCrop rotationSlider aspect={1} showGrid>
+                                            <Upload
+                                                name="avatar"
+                                                showUploadList={false}
+                                                customRequest={() => { }}
+                                                beforeUpload={(file) => {
+                                                    if (!file.type.startsWith("image/")) {
+                                                        messageApi.error("Only image files allowed!");
+                                                        return Upload.LIST_IGNORE;
+                                                    }
+                                                    if (file.size > 5 * 1024 * 1024) {
+                                                        messageApi.error("Image must be less than 5MB!");
+                                                        return Upload.LIST_IGNORE;
+                                                    }
+                                                    setImageFile(file);
+                                                    const reader = new FileReader();
+                                                    reader.onload = (ev) => setUploadedImage(ev.target.result);
+                                                    reader.readAsDataURL(file);
+                                                    return false;
+                                                }}
+                                            >
+                                                <div className="profile-avatar-label" style={{ cursor: "pointer", display: "inline-block", position: "relative" }}>
+                                                    <Avatar
+                                                        size={80}
+                                                        src={uploadedImage || null}
+                                                        style={{
+                                                            backgroundColor: uploadedImage ? "transparent" : "#3b82f6",
+                                                            fontSize: "28px",
+                                                        }}
+                                                    >
+                                                        {!uploadedImage && (form.getFieldValue("name")?.charAt(0).toUpperCase() || "?")}
+                                                    </Avatar>
+                                                    <div className="profile-avatar-edit-icon">
+                                                        <EditOutlined />
+                                                    </div>
+                                                </div>
+                                            </Upload>
+                                        </ImgCrop>
+                                        {uploadedImage && (
+                                            <Button
+                                                type="link"
+                                                danger
+                                                size="small"
+                                                onClick={async () => {
+                                                    if (editingRecord) {
+                                                        await handleRemoveImage(editingRecord.id);
+                                                    }
+                                                    setUploadedImage(null);
+                                                    setImageFile(null);
+                                                }}
+                                            >
+                                                Remove Profile Image
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             </Form.Item>

@@ -121,7 +121,7 @@
   font-size: 13px;
 }
 
-..contacts-form input,
+.contacts-form input,
 .contacts-form .ant-select-selector {
   background: #0f172a !important;
   border: 1px solid rgba(59, 130, 246, 0.3) !important;
@@ -143,45 +143,55 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 10px;
+  padding-top: 8px;
 }
 
 .profile-avatar-label {
   position: relative;
   cursor: pointer;
   display: inline-flex;
-  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  width: 90px;
+  height: 90px;
 }
 
 .profile-avatar-label .ant-avatar {
-  transition: transform 0.2s ease;
+  width: 90px;
+  height: 90px;
+  line-height: 90px;
+  border-radius: 50%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .profile-avatar-label:hover .ant-avatar {
   transform: scale(1.03);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
 }
 
-.profile-avatar-overlay {
+.profile-avatar-edit-icon {
   position: absolute;
-  inset: 0;
+  right: 0;
+  bottom: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.95);
+  border: 2px solid rgba(15, 23, 42, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.32);
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  color: #38bdf8;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 
-.profile-avatar-label:hover .profile-avatar-overlay {
-  opacity: 1;
+.profile-avatar-label:hover .profile-avatar-edit-icon {
+  transform: scale(1.05);
+  background: #0f172a;
 }
 
-.profile-upload-help {
-  color: #94a3b8;
-  font-size: 13px;
-  text-align: center;
-}
 
 /* ===========================
    Select Dropdown
@@ -315,4 +325,65 @@
 .suggestions-table .ant-badge {
   display: flex !important;
   align-items: center !important;
+}
+
+/* ===========================
+   Clickable Avatar (Photo Column)
+=========================== */
+.contacts-table .ant-avatar {
+  transition: all 0.2s ease !important;
+  cursor: pointer;
+}
+
+.contacts-table td .ant-avatar:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+.contacts-table td[style*="cursor: pointer"] .ant-avatar:hover {
+  border: 2px solid #38bdf8 !important;
+}
+
+/* ===========================
+   Image Viewer Modal (WhatsApp-like)
+=========================== */
+.image-viewer-modal-circle .ant-modal-content {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.image-viewer-modal-circle .ant-modal-body {
+  padding: 0 !important;
+}
+
+.image-viewer-modal-circle img {
+  width: 80vw;
+  max-width: 500px;
+  max-height: 500px;
+  transition: transform 0.3s ease !important;
+  cursor: pointer;
+}
+
+.image-viewer-modal-circle img:hover {
+  transform: scale(1.02) !important;
+}
+
+/* Hide image crop controls */
+.img-crop-control.img-crop-control-zoom,
+.img-crop-control.img-crop-control-rotation {
+    display: none !important;
+}
+
+/* Icon-only Edit Button Enhancement */
+.contacts-table .action-edit {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.contacts-table .action-edit:hover {
+  background: rgba(56, 189, 248, 0.15) !important;
+  border-radius: 6px !important;
 }
