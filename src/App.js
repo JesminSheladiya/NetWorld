@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import './App.css';
 import ContactsTable from './components/ContactTable';
 import Login from './components/Login';
+import Register from './components/Register';
 import { FiLogOut } from 'react-icons/fi';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentForm, setCurrentForm] = useState('login');
 
   useEffect(() => {
     // Check if user is already logged in
@@ -41,8 +43,16 @@ function App() {
           </div>
           <ContactsTable />
         </>
+      ) : currentForm === 'login' ? (
+        <Login
+          onLoginSuccess={handleLoginSuccess}
+          onSwitchForm={() => setCurrentForm('register')}
+        />
       ) : (
-        <Login onLoginSuccess={handleLoginSuccess} />
+        <Register
+          onRegisterSuccess={handleLoginSuccess}
+          onSwitchForm={() => setCurrentForm('login')}
+        />
       )}
     </div>
   );

@@ -5,7 +5,16 @@ import axios from "axios";
 
 // Derive API base safely
 const CONTACTS_URL = process.env.REACT_APP_API_URL || "http://localhost:8080/api/contacts";
-const API_BASE = CONTACTS_URL.replace(/\/api\/contacts.*/,'/api'); // -> http://localhost:8080/api
+const API_BASE = CONTACTS_URL.replace(/\/api\/contacts.*/, '/api'); // -> http://localhost:8080/api
+
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 
 export const register = async (username, email, password) => {
   const { data } = await axios.post(`${API_BASE}/auth/register`,
@@ -32,4 +41,7 @@ export const login = async (username, password) => {
 };
 
 export const getToken = () => localStorage.getItem("token");
-export const logout = () => { localStorage.removeItem("token"); localStorage.removeItem("user"); };
+export const logout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+};

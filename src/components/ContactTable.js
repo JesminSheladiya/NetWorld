@@ -484,7 +484,7 @@ function ContactsTable() {
                             </Space>
                         </Space>
 
-                        <Spin spinning={loading} tip="Processing..." size="large">
+                        <Spin spinning={loading} tip="Processing..." size="large" className="spin-container">
                             <Table
                                 bordered
                                 columns={columns}

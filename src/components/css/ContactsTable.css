@@ -25,6 +25,7 @@
 
 .contacts-header-row {
   display: flex;
+  flex-wrap: wrap;                                            
   align-items: center;
   justify-content: space-between;
 }
@@ -32,6 +33,9 @@
 /* ===========================
    Table
 =========================== */
+.contacts-table{
+  min-width: 900px;
+}
 .contacts-table .ant-table-thead > tr > th {
   background: #1e293b !important;
   color: #38bdf8 !important;
@@ -41,6 +45,7 @@
   border-bottom: 1px solid rgba(59, 130, 246, 0.3) !important;
   letter-spacing: 0.5px;
 }
+
 
 .contacts-table .ant-table-tbody > tr > td {
   background: #0f172a !important;

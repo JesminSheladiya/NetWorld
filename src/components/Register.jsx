@@ -1,28 +1,27 @@
 import { useState } from "react";
 import { Form, Input, Button, Card, message, Typography } from "antd";
-import { UserOutlined, LockOutlined } from "@ant-design/icons";
-import { login } from "../Services/authService";
+import { UserOutlined, LockOutlined, MailOutlined } from "@ant-design/icons";
+import { register } from "../Services/authService";
 
 const { Title } = Typography;
 
-function Login({ onLoginSuccess, onSwitchForm }) {
+function Register({ onRegisterSuccess, onSwitchForm }) {
   const [loading, setLoading] = useState(false);
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const data = await login(values.username, values.password);
-      message.success(`Welcome, ${data.username}!`);
-      onLoginSuccess(); // Redirect to contacts
+      const data = await register(values.username, values.email, values.password);
+      message.success(`Welcome, ${data.username}! Registration successful.`);
+      onRegisterSuccess(); // Redirect to contacts
     } catch (error) {
       const msg =
         error.response?.data?.error ||
         error.response?.data?.message ||
-        "Login failed!";
+        "Registration failed!";
 
       message.error(msg);
-    }
-    finally {
+    } finally {
       setLoading(false);
     }
   };
@@ -37,10 +36,10 @@ function Login({ onLoginSuccess, onSwitchForm }) {
     }}>
       <Card style={{ width: 400, boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
         <Title level={2} style={{ textAlign: "center", marginBottom: 30 }}>
-          Net World Login
+          Net World Register
         </Title>
         <Form
-          name="login"
+          name="register"
           onFinish={onFinish}
           autoComplete="off"
           layout="vertical"
@@ -52,6 +51,20 @@ function Login({ onLoginSuccess, onSwitchForm }) {
             <Input
               prefix={<UserOutlined />}
               placeholder="Username"
+              size="large"
+            />
+          </Form.Item>
+
+          <Form.Item
+            name="email"
+            rules={[
+              { required: true, message: "Please enter email!" },
+              { type: 'email', message: "Please enter a valid email!" }
+            ]}
+          >
+            <Input
+              prefix={<MailOutlined />}
+              placeholder="Email"
               size="large"
             />
           </Form.Item>
@@ -75,18 +88,14 @@ function Login({ onLoginSuccess, onSwitchForm }) {
               block
               size="large"
             >
-              Login
+              Register
             </Button>
           </Form.Item>
         </Form>
 
         <div style={{ textAlign: "center", marginTop: 16 }}>
-          {/* <Typography.Text type="secondary">
-            Test user: username=<strong>admin</strong>, password=<strong>admin123</strong>
-          </Typography.Text>
-          <br /> */}
-          <Typography.Text type="secondary" style={{ display: "inline-block", marginTop: 8 }}>
-            Don't have an account? <a onClick={onSwitchForm} style={{ cursor: "pointer", color: "#177ddc" }}>Register here</a>
+          <Typography.Text type="secondary">
+            Already have an account? <a onClick={onSwitchForm} style={{ cursor: "pointer", color: "#177ddc" }}>Login here</a>
           </Typography.Text>
         </div>
       </Card>
@@ -94,4 +103,4 @@ function Login({ onLoginSuccess, onSwitchForm }) {
   );
 }
 
-export default Login;
+export default Register;
