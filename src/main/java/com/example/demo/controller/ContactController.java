@@ -5,18 +5,21 @@ import com.example.demo.dto.InferredRelationDTO;
 import com.example.demo.mapper.ContactMapper;
 import com.example.demo.model.Contact;
 import com.example.demo.model.Relation;
+import com.example.demo.model.User;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.ContactService;
-
 import com.example.demo.service.RelationService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,17 +30,27 @@ public class ContactController {
 
     private final ContactService contactService;
     private final RelationService relationService;
-
+    private final UserRepository userRepository; 
+    
     public ContactController(ContactService contactService,
-                             RelationService relationService) {
+                             RelationService relationService,
+                             UserRepository userRepository) {
         this.contactService = contactService;
         this.relationService = relationService;
+        this.userRepository = userRepository;
     }
 
+    
+    private User getCurrentUser(UserDetails userDetails) {
+        return userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 
     @GetMapping
-    public ResponseEntity<List<ContactDTO>> getAllContacts() {
-        List<Contact> contacts = contactService.getAllContacts();
+    public ResponseEntity<List<ContactDTO>> getAllContacts(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getCurrentUser(userDetails);
+        List<Contact> contacts = contactService.getAllContacts(user);
         List<ContactDTO> dtos = contacts.stream()
                 .map(contact -> {
                     ContactDTO dto = ContactMapper.toDTO(contact);
@@ -50,7 +63,6 @@ public class ContactController {
         return ResponseEntity.ok(dtos);
     }
 
-
     @GetMapping("/{id}")
     public ResponseEntity<ContactDTO> getContactById(@PathVariable Long id) {
         return contactService.getContactById(id)
@@ -58,10 +70,12 @@ public class ContactController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-
     @PostMapping
-    public ResponseEntity<?> createContact(@Valid @RequestBody ContactDTO dto) {
-        Contact saved = contactService.saveContact(dto);
+    public ResponseEntity<?> createContact(
+            @Valid @RequestBody ContactDTO dto,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getCurrentUser(userDetails);
+        Contact saved = contactService.saveContact(dto, user);
         return ResponseEntity.ok(ContactMapper.toDTO(saved));
     }
 
@@ -81,33 +95,39 @@ public class ContactController {
         }
     }
 
+    @DeleteMapping("/{id}/remove-picture")
+    public ResponseEntity<?> removePicture(@PathVariable Long id) {
+        try {
+            ContactDTO updated = contactService.removeProfilePicture(id);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Remove failed!");
+        }
+    }
 
     @GetMapping("/paginated")
     public Page<ContactDTO> getContactsPaginated(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size
-    ) {
+            @RequestParam(defaultValue = "5") int size,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getCurrentUser(userDetails);
         Pageable pageable = PageRequest.of(page, size);
-        Page<Contact> contactsPage = contactService.getAllContacts(pageable);
-
+        Page<Contact> contactsPage = contactService.getAllContacts(user, pageable);
         return contactsPage.map(ContactMapper::toDTO);
     }
 
-
     @PutMapping("/{id}")
-    public ResponseEntity<ContactDTO> updateContact(@PathVariable Long id, @Valid @RequestBody ContactDTO dto) {
+    public ResponseEntity<ContactDTO> updateContact(
+            @PathVariable Long id,
+            @Valid @RequestBody ContactDTO dto) {
         Contact updated = contactService.updateContact(id, dto)
                 .orElseThrow(() -> new RuntimeException("Contact not found"));
-
         ContactDTO responseDto = ContactMapper.toDTO(updated);
         if (updated.getRelation() != null) {
             responseDto.setRelationName(updated.getRelation().getRelationName());
         }
-
         return ResponseEntity.ok(responseDto);
     }
-
-
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteContact(@PathVariable Long id) {
@@ -125,20 +145,18 @@ public class ContactController {
         return ResponseEntity.ok(relationService.inferRelations());
     }
 
-
     @GetMapping("/search")
     public Page<ContactDTO> searchContacts(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String phone,
             @RequestParam(required = false) String email,
-            @RequestParam(required = false) Long relationId,   // id as param
+            @RequestParam(required = false) Long relationId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size
-    ) {
+            @RequestParam(defaultValue = "5") int size,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getCurrentUser(userDetails);
         Page<Contact> contacts =
-                contactService.searchContacts(name, phone, email, relationId, PageRequest.of(page, size));
+                contactService.searchContacts(name, phone, email, relationId, user, PageRequest.of(page, size));
         return contacts.map(ContactMapper::toDTO);
     }
-
-
 }

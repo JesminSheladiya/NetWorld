@@ -34,6 +34,11 @@ public class Contact {
     @JoinColumn(name = "relation_id")  // FK column
     private Relation relation;  // Object!
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+
     public Long getRelationId() {
         return relation != null ? relation.getId() : null;
     }
@@ -69,4 +74,6 @@ public class Contact {
     public Relation getRelation() { return relation; }
     public void setRelation(Relation relation) { this.relation = relation; }
 
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 }

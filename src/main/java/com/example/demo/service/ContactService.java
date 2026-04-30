@@ -4,6 +4,7 @@ import com.example.demo.dto.ContactDTO;
 import com.example.demo.mapper.ContactMapper;
 import com.example.demo.model.Contact;
 import com.example.demo.model.Relation;
+import com.example.demo.model.User;
 import com.example.demo.repository.ContactRepository;
 import com.example.demo.repository.ContactSpecification;
 import com.example.demo.repository.RelationRepository;
@@ -13,14 +14,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-
-
 import java.util.List;
 import java.util.Optional;
 
@@ -39,22 +38,21 @@ public class ContactService {
     @Value("${file.upload-dir}")
     private String uploadDir;
 
-    // Normal list
-    public List<Contact> getAllContacts() {
-        return contactRepository.findAll();
+    public List<Contact> getAllContacts(User user) {
+        return contactRepository.findByUser(user);
     }
 
-    // Pagination
-    public Page<Contact> getAllContacts(Pageable pageable) {
-        return contactRepository.findAll(pageable);
+    public Page<Contact> getAllContacts(User user, Pageable pageable) {
+        return contactRepository.findByUser(user, pageable);
     }
 
     public Optional<Contact> getContactById(Long id) {
         return contactRepository.findById(id);
     }
 
-    public Contact saveContact(ContactDTO dto) {
+    public Contact saveContact(ContactDTO dto, User user) {
         Contact contact = ContactMapper.toEntity(dto);
+        contact.setUser(user);
 
         if (dto.getRelationId() != null) {
             Relation relation = relationRepository.findById(dto.getRelationId())
@@ -65,10 +63,8 @@ public class ContactService {
         return contactRepository.save(contact);
     }
 
-
     public Optional<Contact> updateContact(Long id, ContactDTO dto) {
         return contactRepository.findById(id).map(contact -> {
-
             if (contactRepository.existsByPhoneAndIdNot(dto.getPhone(), id)) {
                 throw new RuntimeException("Phone number already exists!");
             }
@@ -76,7 +72,6 @@ public class ContactService {
                 throw new RuntimeException("Email already exists!");
             }
 
-            // Basic fields update
             contact.setName(dto.getName());
             contact.setPhone(dto.getPhone());
             contact.setEmail(dto.getEmail());
@@ -93,14 +88,14 @@ public class ContactService {
         });
     }
 
-
-
     public void deleteContact(Long id) {
         contactRepository.deleteById(id);
     }
 
-    public Page<Contact> searchContacts(String name, String phone, String email, Long relationId, Pageable pageable) {
-        Specification<Contact> spec = ContactSpecification.buildSpec(name, phone, email, relationId);
+    public Page<Contact> searchContacts(String name, String phone, String email,
+                                        Long relationId, User user, Pageable pageable) {
+        Specification<Contact> spec = ContactSpecification.buildSpec(name, phone, email, relationId)
+                .and((root, query, cb) -> cb.equal(root.get("user"), user));
         return contactRepository.findAll(spec, pageable);
     }
 
@@ -129,4 +124,18 @@ public class ContactService {
         return ContactMapper.toDTO(contact);
     }
 
+    public ContactDTO removeProfilePicture(Long contactId) {
+        Contact contact = contactRepository.findById(contactId)
+                .orElseThrow(() -> new RuntimeException("Contact not found"));
+
+        if (contact.getProfilePicture() != null) {
+            File oldFile = new File(uploadDir + contact.getProfilePicture());
+            if (oldFile.exists()) oldFile.delete();
+        }
+
+        contact.setProfilePicture(null);
+        contactRepository.save(contact);
+
+        return ContactMapper.toDTO(contact);
+    }
 }

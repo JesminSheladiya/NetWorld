@@ -23,9 +23,14 @@ CREATE TABLE IF NOT EXISTS contact (
     email VARCHAR(150) NOT NULL,
     relation_id BIGINT,
     profile_picture VARCHAR(255),
-
+    user_id BIGINT,
     CONSTRAINT uk_contact_phone UNIQUE (phone),
     CONSTRAINT uk_contact_email UNIQUE (email),
-    CONSTRAINT fk_contact_relation
-        FOREIGN KEY (relation_id) REFERENCES relations(id)
+    CONSTRAINT fk_contact_relation FOREIGN KEY (relation_id) REFERENCES relations(id),
+    CONSTRAINT fk_contact_user FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+
+ALTER TABLE contact ADD COLUMN IF NOT EXISTS user_id BIGINT;
+ALTER TABLE contact ADD CONSTRAINT fk_contact_user
+    FOREIGN KEY (user_id) REFERENCES users(id);
