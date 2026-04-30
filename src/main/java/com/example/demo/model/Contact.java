@@ -24,12 +24,20 @@ public class Contact {
     @Column(nullable = false) // unique
     private String email;
 
+    @Column(name = "profile_picture")
+    private String profilePicture;
+
 //    @JoinColumn(name = "relation_id")      // FK column in contact table
 //    private Long relationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "relation_id")  // FK column
     private Relation relation;  // Object!
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
 
     public Long getRelationId() {
         return relation != null ? relation.getId() : null;
@@ -56,10 +64,16 @@ public class Contact {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
+    public String getProfilePicture() { return profilePicture; }
+    public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
+
+
 //    public Long getRelationId() { return relationId; }
 //    public void setRelationId(Long relationId) { this.relationId = relationId; }
 
     public Relation getRelation() { return relation; }
     public void setRelation(Relation relation) { this.relation = relation; }
 
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 }
