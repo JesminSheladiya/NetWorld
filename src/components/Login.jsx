@@ -11,82 +11,56 @@ function Login({ onLoginSuccess, onSwitchForm }) {
   const onFinish = async (values) => {
     setLoading(true);
     try {
-      const data = await login(values.username, values.password);
+      const data = await login(values.identifier, values.password);
       message.success(`Welcome, ${data.username}!`);
-      onLoginSuccess(); // Redirect to contacts
+      onLoginSuccess();
     } catch (error) {
-      const msg =
+      message.error(
         error.response?.data?.error ||
         error.response?.data?.message ||
-        "Login failed!";
-
-      message.error(msg);
-    }
-    finally {
+        "Login failed!"
+      );
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      height: "100vh",
-      background: "#141414"
-    }}>
+    <div style={{ display:"flex", justifyContent:"center",
+                  alignItems:"center", height:"100vh", background:"#141414" }}>
       <Card style={{ width: 400, boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
-        <Title level={2} style={{ textAlign: "center", marginBottom: 30 }}>
+        <Title level={2} style={{ textAlign:"center", marginBottom: 30 }}>
           Net World Login
         </Title>
-        <Form
-          name="login"
-          onFinish={onFinish}
-          autoComplete="off"
-          layout="vertical"
-        >
-          <Form.Item
-            name="username"
-            rules={[{ required: true, message: "Please enter username!" }]}
-          >
-            <Input
-              prefix={<UserOutlined />}
-              placeholder="Username"
-              size="large"
-            />
+
+        <Form name="login" onFinish={onFinish} autoComplete="off" layout="vertical">
+
+          <Form.Item name="identifier"
+            rules={[{ required: true, message: "Please enter email, phone or username!" }]}>
+            <Input prefix={<UserOutlined />}
+                   placeholder="Username / Email / Phone" size="large" />
           </Form.Item>
 
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: "Please enter password!" }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Password"
-              size="large"
-            />
+          <Form.Item name="password"
+            rules={[{ required: true, message: "Please enter password!" }]}>
+            <Input.Password prefix={<LockOutlined />}
+                            placeholder="Password" size="large" />
           </Form.Item>
 
           <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              block
-              size="large"
-            >
+            <Button type="primary" htmlType="submit"
+                    loading={loading} block size="large">
               Login
             </Button>
           </Form.Item>
         </Form>
 
-        <div style={{ textAlign: "center", marginTop: 16 }}>
-          {/* <Typography.Text type="secondary">
-            Test user: username=<strong>admin</strong>, password=<strong>admin123</strong>
-          </Typography.Text>
-          <br /> */}
-          <Typography.Text type="secondary" style={{ display: "inline-block", marginTop: 8 }}>
-            Don't have an account? <a onClick={onSwitchForm} style={{ cursor: "pointer", color: "#177ddc" }}>Register here</a>
+        <div style={{ textAlign:"center", marginTop: 16 }}>
+          <Typography.Text type="secondary">
+            Don't have an account?{" "}
+            <a onClick={onSwitchForm} style={{ cursor:"pointer", color:"#177ddc" }}>
+              Register here
+            </a>
           </Typography.Text>
         </div>
       </Card>
