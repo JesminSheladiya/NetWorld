@@ -4,15 +4,25 @@ import ContactsTable from './components/ContactTable';
 import Login from './components/Login';
 import Register from './components/Register';
 import UserProfile from "./components/UserProfile";
-import { FiLogOut, FiUser } from 'react-icons/fi';
+import { FiLogOut, FiUser, FiSettings } from 'react-icons/fi';
 import { getToken, getUser, logout } from './Services/authService';
-import { Dropdown, ConfigProvider, theme } from 'antd';
+import { Dropdown, ConfigProvider, theme, Button, Avatar } from 'antd';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentForm, setCurrentForm] = useState('login');
   const [profileOpen, setProfileOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState(getUser());
+  const fullName = currentUser?.fullName || currentUser?.username || 'User';
+  const nameParts = fullName.split(' ').filter(Boolean);
+  const firstName = nameParts[0] || 'User';
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+  const initials = nameParts.length > 1
+    ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+    : fullName.slice(0, 2).toUpperCase();
+  const email = currentUser?.email || 'user@mail.com';
+  const profileAvatar = currentUser?.profilePicture || currentUser?.avatar || currentUser?.image || null;
 
   useEffect(() => {
     const token = getToken();
@@ -31,6 +41,7 @@ function App() {
     logout();
     setIsAuthenticated(false);
     setCurrentUser({});
+    setDropdownOpen(false);
   };
 
   const handleProfileUpdate = (updatedUser) => {
@@ -39,50 +50,120 @@ function App() {
   };
 
   return (
-    <div className="App">
-      {isAuthenticated ? (
-        <>
-          <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 1000 }}>
-            <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+    <ConfigProvider theme={{ algorithm: theme.darkAlgorithm }}>
+      <div className="App">
+        {isAuthenticated ? (
+          <>
+            <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 1000 }}>
               <Dropdown
-                menu={{
-                  items: [
-                    {
-                      key: 'profile',
-                      icon: <FiUser />,
-                      label: 'Profile',
-                      onClick: () => setProfileOpen(true),
-                    },
-                    {
-                      key: 'logout',
-                      icon: <FiLogOut />,
-                      label: 'Logout',
-                      danger: true,
-                      onClick: handleLogout,
-                    },
-                  ],
-                }}
+                open={dropdownOpen}
+                onOpenChange={setDropdownOpen}
+                dropdownRender={() => (
+                  <div style={{
+                    width: 260,
+                    borderRadius: 24,
+                    background: '#111827',
+                    color: '#f8fafc',
+                    overflow: 'hidden',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
+                  }}
+                >
+                    <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <Avatar
+                          size={42}
+                          src={profileAvatar}
+                          style={{ backgroundColor: '#1f2937', color: '#7dd3fc' }}
+                        >
+                          {!profileAvatar && initials}
+                        </Avatar>
+                        <div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff' }}>{fullName}</div>
+                          <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 2 }}>{email}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ padding: '10px 0' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProfileOpen(true);
+                          setDropdownOpen(false);
+                        }}
+                        style={{
+                          width: '100%',
+                          border: 'none',
+                          background: 'transparent',
+                          color: '#f8fafc',
+                          fontSize: 14,
+                          textAlign: 'left',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: '12px 18px',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(248, 250, 252, 0.08)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <FiSettings style={{ fontSize: 18, color: '#7dd3fc' }} />
+                        <span>Profile Settings</span>
+                      </button>
+                    </div>
+                    <div style={{ padding: '10px 18px 18px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        style={{
+                          width: '100%',
+                          border: 'none',
+                          background: 'transparent',
+                          color: '#f8fafc',
+                          fontSize: 15,
+                          fontWeight: 600,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          cursor: 'pointer',
+                          padding: '12px 14px',
+                          borderRadius: 14,
+                          transition: 'background 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(248, 250, 252, 0.08)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <FiLogOut style={{ fontSize: 18, color: '#f8fafc' }} />
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
                 placement="bottomRight"
                 trigger={['click']}
               >
                 <div style={{
-                  display: "flex", alignItems: "center", gap: 8, cursor: "pointer", color: "#38bdf8",
-                  background: "rgba(56, 189, 248, 0.1)", padding: "8px 16px", borderRadius: "20px",
-                  border: "1px solid rgba(56, 189, 248, 0.3)", transition: "all 0.3s ease"
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(56, 189, 248, 0.2)"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "rgba(56, 189, 248, 0.1)"}
-                >
-                  <FiUser style={{ fontSize: 18 }} />
-                  <span style={{ fontSize: 15, fontWeight: 500 }}>
-                    {currentUser.fullName || currentUser.username}
-                  </span>
+                  width: 50,
+                  height: 50,
+                  borderRadius: '50%',
+                  background: '#111827',
+                  display: 'grid',
+                  placeItems: 'center',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  cursor: 'pointer',
+                }}>
+                  <Avatar
+                    size={40}
+                    src={profileAvatar}
+                    style={{ backgroundColor: '#1f2937', color: '#ffffff', fontWeight: 700 }}
+                  >
+                    {!profileAvatar && initials}
+                  </Avatar>
                 </div>
               </Dropdown>
-            </ConfigProvider>
-          </div>
+            </div>
 
-          <ContactsTable />
+            <ContactsTable />
 
           <UserProfile
             open={profileOpen}
@@ -101,7 +182,8 @@ function App() {
           onSwitchForm={() => setCurrentForm('login')}
         />
       )}
-    </div>
+      </div>
+    </ConfigProvider>
   );
 }
 

@@ -53,75 +53,210 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
             open={open}
             onCancel={() => { setEditing(false); onClose(); }}
             footer={null}
-            width={440}
+            width={500}
             centered
+            closable={true}
+            title={!editing ? null : <span style={{ color: '#0ea5e9', fontSize: 18, fontWeight: 700 }}>Edit Profile</span>}
+            styles={{
+                content: { 
+                    background: '#0a0f1e', 
+                    border: '1px solid rgba(14, 165, 233, 0.2)',
+                    borderRadius: 24,
+                    padding: 0
+                },
+                header: { 
+                    backgroundColor: '#0a0f1e', 
+                    borderBottom: '1px solid rgba(14, 165, 233, 0.1)',
+                    padding: '20px 24px',
+                    margin: 0
+                },
+                body: { 
+                    backgroundColor: '#0a0f1e', 
+                    color: '#f8fafc', 
+                    padding: editing ? '24px 32px' : '28px 24px' 
+                },
+                mask: { backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(8px)' },
+            }}
+            modalRender={(modal) => (
+                <div style={{
+                    borderRadius: 24,
+                    overflow: 'hidden',
+                    boxShadow: '0 25px 80px rgba(0, 0, 0, 0.45), 0 0 1px rgba(14, 165, 233, 0.2)',
+                }}>
+                    {modal}
+                </div>
+            )}
         >
-            {/* ── View Mode ── */}
             {!editing && (
-                <div style={{ textAlign: "center", padding: "12px 0" }}>
+                <div style={{ textAlign: "center", paddingTop: "12px" }}>
                     <Avatar size={80} icon={<UserOutlined />}
-                        style={{ background: "#177ddc", marginBottom: 16 }} />
-                    <Title level={4} style={{ marginBottom: 4 }}>
+                        style={{ background: "#0ea5e9", marginBottom: 20, color: '#ffffff' }} />
+                    <Title level={3} style={{ marginBottom: 8, color: '#f8fafc', fontWeight: 700 }}>
                         {user.fullName || user.username}
                     </Title>
-                    <Tag color="blue">{user.role || "USER"}</Tag>
+                    <Tag color="cyan" style={{ marginBottom: 24 }}>{user.role || "USER"}</Tag>
 
-                    <Divider />
+                    <Divider style={{ borderColor: 'rgba(14, 165, 233, 0.1)', margin: '20px 0' }} />
 
-                    <div style={{ textAlign: "left", padding: "0 16px" }}>
-                        <p><MailOutlined style={{ marginRight: 8 }} />
-                            <Text strong>Email: </Text>{user.email}
-                        </p>
-                        <p><PhoneOutlined style={{ marginRight: 8 }} />
-                            <Text strong>Phone: </Text>{user.phone || "—"}
-                        </p>
-                        <p><UserOutlined style={{ marginRight: 8 }} />
-                            <Text strong>Username: </Text>{user.username}
-                        </p>
+                    <div style={{ textAlign: "left", paddingX: "16px" }}>
+                        <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <MailOutlined style={{ color: '#0ea5e9', fontSize: 16 }} />
+                            <Text style={{ color: '#cbd5e1' }}>
+                                <span style={{ color: '#94a3b8' }}>Email: </span>
+                                {user.email}
+                            </Text>
+                        </div>
+                        <div style={{ marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <PhoneOutlined style={{ color: '#0ea5e9', fontSize: 16 }} />
+                            <Text style={{ color: '#cbd5e1' }}>
+                                <span style={{ color: '#94a3b8' }}>Phone: </span>
+                                {user.phone || "—"}
+                            </Text>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <UserOutlined style={{ color: '#0ea5e9', fontSize: 16 }} />
+                            <Text style={{ color: '#cbd5e1' }}>
+                                <span style={{ color: '#94a3b8' }}>Username: </span>
+                                {user.username}
+                            </Text>
+                        </div>
                     </div>
 
-                    <Divider />
+                    <Divider style={{ borderColor: 'rgba(14, 165, 233, 0.1)', margin: '20px 0' }} />
 
-                    <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
+                    <Button type="primary" icon={<EditOutlined />} onClick={handleEdit} style={{ background: '#0ea5e9', borderColor: '#0ea5e9', fontWeight: 600 }}>
                         Edit Profile
                     </Button>
                 </div>
             )}
 
-            {/* ── Edit Mode ── */}
             {editing && (
-                <>
-                    <Title level={4} style={{ marginBottom: 20 }}>Edit Profile</Title>
-                    <Form form={form} layout="vertical" onFinish={handleSave}>
+                <Form form={form} layout="vertical" onFinish={handleSave}>
+                    <Form.Item 
+                        name="fullName" 
+                        label={<span style={{ color: '#cbd5e1', fontWeight: 500 }}>Full Name</span>}
+                        style={{ marginBottom: 18 }}
+                    >
+                        <Input
+                            prefix={<UserOutlined style={{ color: '#0ea5e9', marginRight: 8 }} />}
+                            placeholder="Full Name"
+                            style={{
+                                backgroundColor: '#111827',
+                                borderColor: 'rgba(14, 165, 233, 0.2)',
+                                color: '#f8fafc',
+                                height: 45,
+                                borderRadius: 12,
+                                fontSize: 14,
+                                border: '1px solid rgba(14, 165, 233, 0.2)',
+                            }}
+                            className="profile-input"
+                        />
+                    </Form.Item>
 
-                        <Form.Item name="fullName" label="Full Name">
-                            <Input prefix={<UserOutlined />} placeholder="Full Name" />
-                        </Form.Item>
+                    <Form.Item
+                        name="phone"
+                        label={<span style={{ color: '#cbd5e1', fontWeight: 500 }}>Phone</span>}
+                        rules={[{ pattern: /^[0-9]{10}$/, message: "10 digits required" }]}
+                        style={{ marginBottom: 18 }}
+                    >
+                        <Input
+                            prefix={<PhoneOutlined style={{ color: '#0ea5e9', marginRight: 8 }} />}
+                            placeholder="10-digit phone"
+                            style={{
+                                backgroundColor: '#111827',
+                                borderColor: 'rgba(14, 165, 233, 0.2)',
+                                color: '#f8fafc',
+                                height: 45,
+                                borderRadius: 12,
+                                fontSize: 14,
+                                border: '1px solid rgba(14, 165, 233, 0.2)',
+                            }}
+                            className="profile-input"
+                        />
+                    </Form.Item>
 
-                        <Form.Item name="phone" label="Phone"
-                            rules={[{ pattern: /^[0-9]{10}$/, message: "10 digits required" }]}>
-                            <Input prefix={<PhoneOutlined />} placeholder="10-digit phone" />
-                        </Form.Item>
+                    <Divider style={{ borderColor: 'rgba(14, 165, 233, 0.15)', marginTop: 24, marginBottom: 22 }} />
 
-                        <Divider orientation="left">Change Password (optional)</Divider>
+                    <Title level={5} style={{ color: '#f8fafc', marginBottom: 16, fontWeight: 600, fontSize: 15 }}>Change Password (optional)</Title>
 
-                        <Form.Item name="currentPassword" label="Current Password">
-                            <Input.Password prefix={<LockOutlined />} placeholder="Current password" />
-                        </Form.Item>
+                    <Form.Item 
+                        name="currentPassword" 
+                        label={<span style={{ color: '#cbd5e1', fontWeight: 500 }}>Current Password</span>}
+                        style={{ marginBottom: 18 }}
+                    >
+                        <Input.Password
+                            prefix={<LockOutlined style={{ color: '#0ea5e9', marginRight: 8 }} />}
+                            placeholder="Current password"
+                            style={{
+                                backgroundColor: '#111827',
+                                borderColor: 'rgba(14, 165, 233, 0.2)',
+                                color: '#f8fafc',
+                                height: 45,
+                                borderRadius: 12,
+                                fontSize: 14,
+                                border: '1px solid rgba(14, 165, 233, 0.2)',
+                            }}
+                            className="profile-input"
+                        />
+                    </Form.Item>
 
-                        <Form.Item name="newPassword" label="New Password"
-                            rules={[{ min: 8, message: "Min 8 characters" }]}>
-                            <Input.Password prefix={<LockOutlined />} placeholder="New password" />
-                        </Form.Item>
+                    <Form.Item
+                        name="newPassword"
+                        label={<span style={{ color: '#cbd5e1', fontWeight: 500 }}>New Password</span>}
+                        rules={[{ min: 8, message: "Min 8 characters" }]}
+                        style={{ marginBottom: 24 }}
+                    >
+                        <Input.Password
+                            prefix={<LockOutlined style={{ color: '#0ea5e9', marginRight: 8 }} />}
+                            placeholder="New password"
+                            style={{
+                                backgroundColor: '#111827',
+                                borderColor: 'rgba(14, 165, 233, 0.2)',
+                                color: '#f8fafc',
+                                height: 45,
+                                borderRadius: 12,
+                                fontSize: 14,
+                                border: '1px solid rgba(14, 165, 233, 0.2)',
+                            }}
+                            className="profile-input"
+                        />
+                    </Form.Item>
 
-                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                            <Button onClick={() => setEditing(false)}>Cancel</Button>
-                            <Button type="primary" htmlType="submit" loading={loading}>
-                                Save Changes
-                            </Button>
-                        </div>
-                    </Form>
-                </>
+                    <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 28 }}>
+                        <Button 
+                            onClick={() => setEditing(false)} 
+                            style={{ 
+                                backgroundColor: '#1e293b', 
+                                color: '#cbd5e1', 
+                                borderColor: 'rgba(14, 165, 233, 0.1)',
+                                fontWeight: 600,
+                                height: 44,
+                                fontSize: 14,
+                                borderRadius: 12,
+                                padding: '0 24px',
+                            }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            type="primary" 
+                            htmlType="submit" 
+                            loading={loading} 
+                            style={{ 
+                                background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', 
+                                borderColor: '#0ea5e9', 
+                                fontWeight: 600,
+                                height: 44,
+                                fontSize: 14,
+                                borderRadius: 12,
+                                padding: '0 24px',
+                                boxShadow: '0 4px 14px 0 rgba(14, 165, 233, 0.39)',
+                            }}
+                        >
+                            Save Changes
+                        </Button>
+                    </div>
+                </Form>
             )}
         </Modal>
     );

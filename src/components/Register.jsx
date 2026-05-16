@@ -58,7 +58,7 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
                 }
               }
             ]}>
-            <Input prefix={<UserOutlined />} placeholder="Full Name (e.g. Jesmin Sheladiya)" size="large" />
+            <Input prefix={<UserOutlined />} placeholder="Enter Name" size="large" />
           </Form.Item>
 
           <Form.Item name="email"

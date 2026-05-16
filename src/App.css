@@ -1,3 +1,8 @@
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 .App {
   text-align: center;
 }
@@ -8,4 +13,19 @@ body{
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
+}
+
+/* Profile Input Styles */
+.profile-input:hover {
+  border-color: rgba(14, 165, 233, 0.5) !important;
+}
+
+.profile-input:focus, .profile-input-focused {
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15) !important;
+  background-color: #0f172a !important;
+}
+
+.ant-form-item-label label {
+  font-size: 13px !important;
 }

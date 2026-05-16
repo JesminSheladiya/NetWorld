@@ -659,6 +659,8 @@ function ContactsTable() {
                                 title={null}
                                 open={imageModalVisible}
                                 onCancel={() => setImageModalVisible(false)}
+                                destroyOnClose
+                                maskClosable={true}
                                 footer={null}
                                 closable={false}
                                 centered
@@ -692,6 +694,8 @@ function ContactsTable() {
                         title={editingRecord ? "Edit Contact" : "Add Contact"}
                         open={isModalOpen}
                         onOk={handleOk}
+                        destroyOnClose
+                        maskClosable={true}
                         onCancel={() => setIsModalOpen(false)}
                         okText="Save"
                         cancelText="Cancel"
