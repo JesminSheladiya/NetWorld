@@ -42,7 +42,7 @@ public class ContactController {
 
     
     private User getCurrentUser(UserDetails userDetails) {
-        return userRepository.findByUsername(userDetails.getUsername())
+        return userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
