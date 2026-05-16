@@ -4,8 +4,7 @@ import com.example.demo.dto.*;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtUtil;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,35 +15,77 @@ public class AuthService {
     private final UserRepository users;
     private final PasswordEncoder encoder;
     private final JwtUtil jwt;
-    private final AuthenticationManager authManager;
     private final CustomUserDetailsService uds;
 
-    public AuthService(UserRepository users, PasswordEncoder encoder, JwtUtil jwt,
-                       AuthenticationManager authManager, CustomUserDetailsService uds) {
-        this.users = users; this.encoder = encoder; this.jwt = jwt;
-        this.authManager = authManager; this.uds = uds;
+    public AuthService(UserRepository users, PasswordEncoder encoder,
+                       JwtUtil jwt, CustomUserDetailsService uds) {
+        this.users   = users;
+        this.encoder = encoder;
+        this.jwt     = jwt;
+        this.uds     = uds;
     }
 
     public AuthResponse register(RegisterRequest req) {
-        if (users.existsByUsername(req.getUsername())) throw new RuntimeException("Username already exists");
-        if (users.existsByEmail(req.getEmail())) throw new RuntimeException("Email already exists");
+//        if (users.existsByUsername(req.getUsername()))
+//            throw new RuntimeException("Username already exists");
+        if (users.existsByEmail(req.getEmail()))
+            throw new RuntimeException("Email already exists");
+        if (users.existsByPhone(req.getPhone()))
+            throw new RuntimeException("Phone already exists");
 
         User u = new User();
         u.setUsername(req.getUsername());
         u.setPassword(encoder.encode(req.getPassword()));
         u.setEmail(req.getEmail());
+        u.setPhone(req.getPhone());
+        u.setFullName(req.getFullName());
         users.save(u);
 
-        UserDetails d = uds.loadUserByUsername(u.getUsername());
-        String token = jwt.generateToken(d);
-        return new AuthResponse(token, u.getUsername(), u.getEmail());
+        return buildResponse(u);
     }
 
     public AuthResponse login(LoginRequest req) {
-        authManager.authenticate(new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
-        UserDetails d = uds.loadUserByUsername(req.getUsername());
-        User u = users.findByUsername(req.getUsername()).orElseThrow();
-        String token = jwt.generateToken(d);
-        return new AuthResponse(token, u.getUsername(), u.getEmail());
+        User u = users.findByIdentifier(req.getIdentifier())
+                .orElseThrow(() -> new BadCredentialsException("User not found"));
+
+        if (!encoder.matches(req.getPassword(), u.getPassword()))
+            throw new BadCredentialsException("Invalid password");
+
+        return buildResponse(u);
+    }
+
+    public AuthResponse updateProfile(String email, UpdateProfileRequest req) {
+        User u = users.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (req.getPhone() != null && !req.getPhone().equals(u.getPhone())) {
+            if (users.existsByPhone(req.getPhone()))
+                throw new RuntimeException("Phone already in use");
+            u.setPhone(req.getPhone());
+        }
+
+        if (req.getFullName() != null) u.setFullName(req.getFullName());
+
+        if (req.getNewPassword() != null && !req.getNewPassword().isBlank()) {
+            if (!encoder.matches(req.getCurrentPassword(), u.getPassword()))
+                throw new RuntimeException("Current password is incorrect");
+            u.setPassword(encoder.encode(req.getNewPassword()));
+        }
+
+        users.save(u);
+        return buildResponse(u);
+    }
+
+    private AuthResponse buildResponse(User u) {
+        UserDetails d = uds.loadUserByUsername(u.getEmail());
+        String token  = jwt.generateToken(d);
+        return new AuthResponse(
+                token,
+                u.getDisplayName(),
+                u.getEmail(),
+                u.getPhone(),
+                u.getFullName(),
+                u.getId()
+        );
     }
 }
