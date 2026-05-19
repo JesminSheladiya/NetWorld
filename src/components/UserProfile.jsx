@@ -58,29 +58,29 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
             closable={true}
             title={!editing ? null : <span style={{ color: '#0ea5e9', fontSize: 18, fontWeight: 700 }}>Edit Profile</span>}
             styles={{
-                content: { 
-                    background: '#0a0f1e', 
-                    border: '1px solid rgba(14, 165, 233, 0.2)',
-                    borderRadius: 24,
+                content: {
+                    background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.97) 0%, rgb(2 0 15) 100%)',
+                    border: '1px solid rgba(59, 130, 246, 0.25)',
+                    borderRadius: '10px',
+                    borderRadius: 15,
+                    overflow: 'hidden',
                     padding: 0
                 },
-                header: { 
-                    backgroundColor: '#0a0f1e', 
-                    borderBottom: '1px solid rgba(14, 165, 233, 0.1)',
+                header: {
+                    background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.97) 0%)',
+                    borderBottom: '1px solid rgba(59, 130, 246, 0.15)',
                     padding: '20px 24px',
                     margin: 0
                 },
-                body: { 
-                    backgroundColor: '#0a0f1e', 
-                    color: '#f8fafc', 
-                    padding: editing ? '24px 32px' : '28px 24px' 
+                body: {
+                    background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.97) 0%, rgb(2 0 15) 100%)',
+                    color: '#f8fafc',
+                    padding: editing ? '24px 32px' : '28px 24px'
                 },
-                mask: { backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(8px)' },
+                mask: { backgroundColor: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(8px)' },
             }}
             modalRender={(modal) => (
                 <div style={{
-                    borderRadius: 24,
-                    overflow: 'hidden',
                     boxShadow: '0 25px 80px rgba(0, 0, 0, 0.45), 0 0 1px rgba(14, 165, 233, 0.2)',
                 }}>
                     {modal}
@@ -132,8 +132,8 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
 
             {editing && (
                 <Form form={form} layout="vertical" onFinish={handleSave}>
-                    <Form.Item 
-                        name="fullName" 
+                    <Form.Item
+                        name="fullName"
                         label={<span style={{ color: '#cbd5e1', fontWeight: 500 }}>Full Name</span>}
                         style={{ marginBottom: 18 }}
                     >
@@ -179,8 +179,8 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
 
                     <Title level={5} style={{ color: '#f8fafc', marginBottom: 16, fontWeight: 600, fontSize: 15 }}>Change Password (optional)</Title>
 
-                    <Form.Item 
-                        name="currentPassword" 
+                    <Form.Item
+                        name="currentPassword"
                         label={<span style={{ color: '#cbd5e1', fontWeight: 500 }}>Current Password</span>}
                         style={{ marginBottom: 18 }}
                     >
@@ -223,11 +223,11 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                     </Form.Item>
 
                     <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", marginTop: 28 }}>
-                        <Button 
-                            onClick={() => setEditing(false)} 
-                            style={{ 
-                                backgroundColor: '#1e293b', 
-                                color: '#cbd5e1', 
+                        <Button
+                            onClick={() => setEditing(false)}
+                            style={{
+                                backgroundColor: '#1e293b',
+                                color: '#cbd5e1',
                                 borderColor: 'rgba(14, 165, 233, 0.1)',
                                 fontWeight: 600,
                                 height: 44,
@@ -238,19 +238,19 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                         >
                             Cancel
                         </Button>
-                        <Button 
-                            type="primary" 
-                            htmlType="submit" 
-                            loading={loading} 
-                            style={{ 
-                                background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', 
-                                borderColor: '#0ea5e9', 
+                        <Button
+                            type="primary"
+                            htmlType="submit"
+                            loading={loading}
+                            style={{
+                                background: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+                                borderColor: '#0ea5e9',
                                 fontWeight: 600,
                                 height: 44,
                                 fontSize: 14,
                                 borderRadius: 12,
                                 padding: '0 24px',
-                                boxShadow: '0 4px 14px 0 rgba(14, 165, 233, 0.39)',
+                                boxShadow: 'rgba(14, 165, 233, 0.3) 0px 0px 10px 0px',
                             }}
                         >
                             Save Changes

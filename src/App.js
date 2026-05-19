@@ -67,7 +67,7 @@ function App() {
                     overflow: 'hidden',
                     boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
                   }}
-                >
+                  >
                     <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <Avatar
@@ -165,23 +165,23 @@ function App() {
 
             <ContactsTable />
 
-          <UserProfile
-            open={profileOpen}
-            onClose={() => setProfileOpen(false)}
-            onProfileUpdate={handleProfileUpdate}
+            <UserProfile
+              open={profileOpen}
+              onClose={() => setProfileOpen(false)}
+              onProfileUpdate={handleProfileUpdate}
+            />
+          </>
+        ) : currentForm === 'login' ? (
+          <Login
+            onLoginSuccess={handleLoginSuccess}
+            onSwitchForm={() => setCurrentForm('register')}
           />
-        </>
-      ) : currentForm === 'login' ? (
-        <Login
-          onLoginSuccess={handleLoginSuccess}
-          onSwitchForm={() => setCurrentForm('register')}
-        />
-      ) : (
-        <Register
-          onRegisterSuccess={handleLoginSuccess}
-          onSwitchForm={() => setCurrentForm('login')}
-        />
-      )}
+        ) : (
+          <Register
+            onRegisterSuccess={handleLoginSuccess}
+            onSwitchForm={() => setCurrentForm('login')}
+          />
+        )}
       </div>
     </ConfigProvider>
   );

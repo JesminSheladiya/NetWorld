@@ -38,8 +38,17 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
       display: "flex", justifyContent: "center",
       alignItems: "center", height: "100vh", background: "#141414"
     }}>
-      <Card style={{ width: 420, boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
-        <Title level={2} style={{ textAlign: "center", marginBottom: 24 }}>
+      <Card
+        style={{
+          width: 420,
+          background: "linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)",
+          border: "1px solid rgba(59, 130, 246, 0.25)",
+          borderRadius: 16,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        }}
+        styles={{ body: { padding: "32px 28px" } }}
+      >
+        <Title level={2} style={{ textAlign: "center", marginBottom: 24, color: "#f1f5f9" }}>
           Net World Register
         </Title>
 
@@ -58,7 +67,7 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
                 }
               }
             ]}>
-            <Input prefix={<UserOutlined />} placeholder="Enter Name" size="large" />
+            <Input prefix={<UserOutlined style={{ color: "#38bdf8" }} />} placeholder="Enter Name" size="large" />
           </Form.Item>
 
           <Form.Item name="email"
@@ -66,7 +75,7 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
               { required: true, message: "Please enter email!" },
               { type: "email", message: "Please enter a valid email!" }
             ]}>
-            <Input prefix={<MailOutlined />} placeholder="Email" size="large" />
+            <Input prefix={<MailOutlined style={{ color: "#38bdf8" }} />} placeholder="Email" size="large" />
           </Form.Item>
 
           <Form.Item name="phone"
@@ -74,7 +83,7 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
               { required: true, message: "Please enter phone!" },
               { pattern: /^[0-9]{10}$/, message: "Phone must be 10 digits!" }
             ]}>
-            <Input prefix={<PhoneOutlined />} placeholder="Phone (10 digits)" size="large" />
+            <Input prefix={<PhoneOutlined style={{ color: "#38bdf8" }} />} placeholder="Phone (10 digits)" size="large" />
           </Form.Item>
 
           <Form.Item name="password"
@@ -82,7 +91,7 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
               { required: true, message: "Please enter password!" },
               { min: 8, message: "Password must be at least 8 characters!" }
             ]}>
-            <Input.Password prefix={<LockOutlined />} placeholder="Password" size="large" />
+            <Input.Password prefix={<LockOutlined style={{ color: "#38bdf8" }} />} placeholder="Password" size="large" />
           </Form.Item>
 
           <Form.Item>
@@ -94,9 +103,9 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
         </Form>
 
         <div style={{ textAlign: "center", marginTop: 8 }}>
-          <Typography.Text type="secondary">
+          <Typography.Text style={{ color: "#94a3b8" }}>
             Already have an account?{" "}
-            <a onClick={onSwitchForm} style={{ cursor: "pointer", color: "#177ddc" }}>
+            <a onClick={onSwitchForm} style={{ cursor: "pointer", color: "#38bdf8", fontWeight: 600 }}>
               Login here
             </a>
           </Typography.Text>

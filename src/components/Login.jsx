@@ -30,8 +30,17 @@ function Login({ onLoginSuccess, onSwitchForm }) {
       display: "flex", justifyContent: "center",
       alignItems: "center", height: "100vh", background: "#141414"
     }}>
-      <Card style={{ width: 400, boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
-        <Title level={2} style={{ textAlign: "center", marginBottom: 30 }}>
+      <Card
+        style={{
+          width: 400,
+          background: "linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)",
+          border: "1px solid rgba(59, 130, 246, 0.25)",
+          borderRadius: 16,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+        }}
+        styles={{ body: { padding: "32px 28px" } }}
+      >
+        <Title level={2} style={{ textAlign: "center", marginBottom: 30, color: "#f1f5f9" }}>
           Net World Login
         </Title>
 
@@ -40,7 +49,7 @@ function Login({ onLoginSuccess, onSwitchForm }) {
           <Form.Item name="identifier"
             rules={[{ required: true, message: "Please enter email or phone!" }]}>
             <Input
-              prefix={<UserOutlined />}
+              prefix={<UserOutlined style={{ color: "#38bdf8" }} />}
               placeholder="Email / Phone"
               size="large"
             />
@@ -48,7 +57,7 @@ function Login({ onLoginSuccess, onSwitchForm }) {
 
           <Form.Item name="password"
             rules={[{ required: true, message: "Please enter password!" }]}>
-            <Input.Password prefix={<LockOutlined />}
+            <Input.Password prefix={<LockOutlined style={{ color: "#38bdf8" }} />}
               placeholder="Password" size="large" />
           </Form.Item>
 
@@ -61,9 +70,9 @@ function Login({ onLoginSuccess, onSwitchForm }) {
         </Form>
 
         <div style={{ textAlign: "center", marginTop: 16 }}>
-          <Typography.Text type="secondary">
+          <Typography.Text style={{ color: "#94a3b8" }}>
             Don't have an account?{" "}
-            <a onClick={onSwitchForm} style={{ cursor: "pointer", color: "#177ddc" }}>
+            <a onClick={onSwitchForm} style={{ cursor: "pointer", color: "#38bdf8", fontWeight: 600 }}>
               Register here
             </a>
           </Typography.Text>
