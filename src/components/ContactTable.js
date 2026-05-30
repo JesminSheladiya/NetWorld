@@ -235,26 +235,21 @@ function ContactsTable() {
                 setLoading(true);
 
                 try {
+                    const payload = {
+                        ...values,
+                        phone: editingRecord ? editingRecord.phone : values.phone,
+                        profilePicture: uploadedImage !== undefined ? uploadedImage : null
+                    };
+
                     let response;
                     let savedContact;
 
                     if (editingRecord) {
-                        response = await http.put(`${API_URL}/${editingRecord.id}`, values);
+                        response = await http.put(`${API_URL}/${editingRecord.id}`, payload);
                         savedContact = response.data;
                     } else {
-                        response = await http.post(API_URL, values);
+                        response = await http.post(API_URL, payload);
                         savedContact = response.data;
-                    }
-
-                    if (imageFile) {
-                        const formData = new FormData();
-                        formData.append("file", imageFile);
-                        const uploadRes = await http.post(
-                            `${API_URL}/${savedContact.id}/upload-picture`,
-                            formData,
-                            { headers: { "Content-Type": "multipart/form-data" } }
-                        );
-                        savedContact = uploadRes.data;
                     }
 
                     const relationObj = relations.find(r => r.id == savedContact.relationId);
@@ -309,7 +304,6 @@ function ContactsTable() {
                 messageApi.error("Please fill all required fields!");
             });
     };
-
 
 
     const filteredData = dataSource.filter((item) => {
