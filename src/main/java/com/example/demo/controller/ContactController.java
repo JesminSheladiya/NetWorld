@@ -82,27 +82,18 @@ public class ContactController {
     @PostMapping("/{id}/upload-picture")
     public ResponseEntity<?> uploadPicture(
             @PathVariable Long id,
-            @RequestParam("file") MultipartFile file) {
-        try {
-            String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                return ResponseEntity.badRequest().body("Only image files allowed!");
-            }
-            ContactDTO updated = contactService.uploadProfilePicture(id, file);
-            return ResponseEntity.ok(updated);
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().body("Upload failed!");
-        }
+            @RequestBody java.util.Map<String, String> body) {
+        String base64 = body.get("imageBase64");
+        if (base64 == null || base64.isBlank())
+            return ResponseEntity.badRequest().body("Image data required!");
+        ContactDTO updated = contactService.uploadProfilePicture(id, base64);
+        return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}/remove-picture")
     public ResponseEntity<?> removePicture(@PathVariable Long id) {
-        try {
-            ContactDTO updated = contactService.removeProfilePicture(id);
-            return ResponseEntity.ok(updated);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Remove failed!");
-        }
+        ContactDTO updated = contactService.removeProfilePicture(id);
+        return ResponseEntity.ok(updated);
     }
 
     @GetMapping("/paginated")

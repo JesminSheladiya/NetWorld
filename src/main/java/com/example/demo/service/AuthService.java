@@ -58,13 +58,18 @@ public class AuthService {
         User u = users.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (req.getPhone() != null && !req.getPhone().equals(u.getPhone())) {
+        if (req.getPhone() != null && !req.getPhone().isBlank()
+                && !req.getPhone().equals(u.getPhone())) {
             if (users.existsByPhone(req.getPhone()))
                 throw new RuntimeException("Phone already in use");
             u.setPhone(req.getPhone());
         }
 
-        if (req.getFullName() != null) u.setFullName(req.getFullName());
+        if (req.getFullName() != null && !req.getFullName().isBlank())
+            u.setFullName(req.getFullName());
+
+        if (req.getProfilePicture() != null)
+            u.setProfilePicture(req.getProfilePicture());
 
         if (req.getNewPassword() != null && !req.getNewPassword().isBlank()) {
             if (!encoder.matches(req.getCurrentPassword(), u.getPassword()))
@@ -85,7 +90,8 @@ public class AuthService {
                 u.getEmail(),
                 u.getPhone(),
                 u.getFullName(),
-                u.getId()
+                u.getId(),
+                u.getProfilePicture()
         );
     }
 }

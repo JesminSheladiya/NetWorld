@@ -21,11 +21,6 @@ public class ContactDTO {
     private Long relationId;
     private String relationName;
 
-    @Size(max = 255, message = "Profile picture URL must not exceed 255 characters")
-    @Pattern(
-            regexp = "^(|http(s?):)([/|.|\\w|\\s|-])*\\.(?:jpg|jpeg|png|gif)$",
-            message = "Profile picture must be a valid image URL"
-    )
     private String profilePicture;
 
     // Getters & Setters
