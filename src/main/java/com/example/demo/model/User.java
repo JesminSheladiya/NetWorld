@@ -33,6 +33,9 @@ public class User implements UserDetails {
     @Column(name = "full_name")
     private String fullName;
 
+    @Column(name = "profile_picture", columnDefinition = "TEXT")
+    private String profilePicture;
+
     @Column(nullable = false)
     private String role = "USER";
 
@@ -58,6 +61,9 @@ public class User implements UserDetails {
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getProfilePicture() { return profilePicture; }
+    public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
 
     public String getRole()     { return role; }
     public void setRole(String role) { this.role = role; }

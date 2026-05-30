@@ -21,11 +21,7 @@ public class ContactMapper {
             dto.setRelationName(null);
         }
 
-        if (contact.getProfilePicture() != null) {
-            dto.setProfilePicture("http://localhost:8080/uploads/" + contact.getProfilePicture());
-        } else {
-            dto.setProfilePicture(null);
-        }
+        dto.setProfilePicture(contact.getProfilePicture());
 
         return dto;
     }
@@ -40,6 +36,7 @@ public class ContactMapper {
         if (dto.getRelationId() != null) {
             contact.setRelationId(dto.getRelationId());
         }
+        contact.setProfilePicture(dto.getProfilePicture());
 
         return contact;
     }

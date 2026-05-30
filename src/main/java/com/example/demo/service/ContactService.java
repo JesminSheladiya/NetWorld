@@ -12,14 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,9 +26,6 @@ public class ContactService {
         this.contactRepository = contactRepository;
         this.relationRepository = relationRepository;
     }
-
-    @Value("${file.upload-dir}")
-    private String uploadDir;
 
     public List<Contact> getAllContacts(User user) {
         return contactRepository.findByUser(user);
@@ -76,6 +65,12 @@ public class ContactService {
             contact.setPhone(dto.getPhone());
             contact.setEmail(dto.getEmail());
 
+            if (dto.getProfilePicture() != null) {
+                contact.setProfilePicture(
+                        dto.getProfilePicture().isBlank() ? null : dto.getProfilePicture()
+                );
+            }
+
             if (dto.getRelationId() != null) {
                 Relation relation = relationRepository.findById(dto.getRelationId())
                         .orElseThrow(() -> new IllegalArgumentException("Invalid relation ID"));
@@ -99,43 +94,19 @@ public class ContactService {
         return contactRepository.findAll(spec, pageable);
     }
 
-    public ContactDTO uploadProfilePicture(Long contactId, MultipartFile file) throws IOException {
+    public ContactDTO uploadProfilePicture(Long contactId, String base64Image) {
         Contact contact = contactRepository.findById(contactId)
                 .orElseThrow(() -> new RuntimeException("Contact not found"));
-
-        File folder = new File(uploadDir);
-        if (!folder.exists()) folder.mkdirs();
-
-        String original = file.getOriginalFilename();
-        String extension = original.substring(original.lastIndexOf("."));
-        String filename = contactId + "_" + System.currentTimeMillis() + extension;
-
-        if (contact.getProfilePicture() != null) {
-            File oldFile = new File(uploadDir + contact.getProfilePicture());
-            if (oldFile.exists()) oldFile.delete();
-        }
-
-        Path filePath = Paths.get(uploadDir + filename);
-        Files.write(filePath, file.getBytes());
-
-        contact.setProfilePicture(filename);
+        contact.setProfilePicture(base64Image);
         contactRepository.save(contact);
-
         return ContactMapper.toDTO(contact);
     }
 
     public ContactDTO removeProfilePicture(Long contactId) {
         Contact contact = contactRepository.findById(contactId)
                 .orElseThrow(() -> new RuntimeException("Contact not found"));
-
-        if (contact.getProfilePicture() != null) {
-            File oldFile = new File(uploadDir + contact.getProfilePicture());
-            if (oldFile.exists()) oldFile.delete();
-        }
-
         contact.setProfilePicture(null);
         contactRepository.save(contact);
-
         return ContactMapper.toDTO(contact);
     }
 }

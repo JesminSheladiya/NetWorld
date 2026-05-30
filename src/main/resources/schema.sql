@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     email     VARCHAR(150) NOT NULL,
     phone     VARCHAR(20),
     full_name VARCHAR(150),
+    profile_picture TEXT,
     role      VARCHAR(50) NOT NULL DEFAULT 'USER',
     CONSTRAINT uk_users_email  UNIQUE (email),
     CONSTRAINT uk_users_phone  UNIQUE (phone)
@@ -24,7 +25,7 @@ CREATE TABLE IF NOT EXISTS contact (
     phone           VARCHAR(20)  NOT NULL,
     email           VARCHAR(150) NOT NULL,
     relation_id     BIGINT,
-    profile_picture VARCHAR(255),
+    profile_picture TEXT,
     user_id         BIGINT,
     CONSTRAINT uk_contact_phone    UNIQUE (phone),
     CONSTRAINT uk_contact_email    UNIQUE (email),
