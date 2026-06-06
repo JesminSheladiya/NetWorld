@@ -15,11 +15,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,8 +29,8 @@ public class ContactController {
 
     private final ContactService contactService;
     private final RelationService relationService;
-    private final UserRepository userRepository; 
-    
+    private final UserRepository userRepository;
+
     public ContactController(ContactService contactService,
                              RelationService relationService,
                              UserRepository userRepository) {
@@ -40,10 +39,27 @@ public class ContactController {
         this.userRepository = userRepository;
     }
 
-    
+    // ── Helper: get user from @AuthenticationPrincipal OR SecurityContext ──
     private User getCurrentUser(UserDetails userDetails) {
-        return userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        String email;
+
+        if (userDetails != null) {
+            email = userDetails.getUsername();
+        } else {
+            // Fallback: read from SecurityContextHolder directly
+            Object principal = SecurityContextHolder.getContext()
+                    .getAuthentication().getPrincipal();
+            if (principal instanceof UserDetails ud) {
+                email = ud.getUsername();
+            } else if (principal instanceof String s) {
+                email = s;
+            } else {
+                throw new RuntimeException("User not authenticated");
+            }
+        }
+
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
     }
 
     @GetMapping
@@ -132,8 +148,10 @@ public class ContactController {
     }
 
     @GetMapping("/inferred-relations")
-    public ResponseEntity<List<InferredRelationDTO>> getInferredRelations() {
-        return ResponseEntity.ok(relationService.inferRelations());
+    public ResponseEntity<List<InferredRelationDTO>> getInferredRelations(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        User user = getCurrentUser(userDetails);
+        return ResponseEntity.ok(relationService.inferRelations(user));
     }
 
     @GetMapping("/search")
@@ -147,7 +165,8 @@ public class ContactController {
             @AuthenticationPrincipal UserDetails userDetails) {
         User user = getCurrentUser(userDetails);
         Page<Contact> contacts =
-                contactService.searchContacts(name, phone, email, relationId, user, PageRequest.of(page, size));
+                contactService.searchContacts(name, phone, email, relationId, user,
+                        PageRequest.of(page, size));
         return contacts.map(ContactMapper::toDTO);
     }
 }

@@ -4,6 +4,7 @@ import com.example.demo.dto.InferredRelationDTO;
 import com.example.demo.model.Contact;
 import com.example.demo.model.Relation;
 import com.example.demo.model.RelationInferenceRule;
+import com.example.demo.model.User;
 import com.example.demo.repository.ContactRepository;
 import com.example.demo.repository.RelationInferenceRuleRepository;
 import com.example.demo.repository.RelationRepository;
@@ -30,13 +31,19 @@ public class RelationService {
         return relationRepository.findAll();
     }
 
-    public List<InferredRelationDTO> inferRelations() {
-        List<Contact> allContacts = contactRepository.findAll();
+
+    public List<InferredRelationDTO> inferRelations(User user) {
+
+        // ── 1. Load only THIS user's contacts ──────────────────────────
+        List<Contact> allContacts = contactRepository.findByUser(user);
+
         List<InferredRelationDTO> suggestions = new ArrayList<>();
         Set<String> seen = new HashSet<>();
 
+        // ── 2. Load inference rules into a map ─────────────────────────
         List<RelationInferenceRule> allRules = inferenceRuleRepository.findAll();
         System.out.println("=== RULES LOADED FROM DB: " + allRules.size());
+        System.out.println("=== USER CONTACTS COUNT : " + allContacts.size());
 
         Map<String, String> rulesMap = new HashMap<>();
         for (RelationInferenceRule rule : allRules) {
@@ -45,6 +52,7 @@ public class RelationService {
             rulesMap.put(key, rule.getInferredRelationName());
         }
 
+        // ── 3. Compare every pair of this user's contacts ──────────────
         for (Contact contactA : allContacts) {
             Relation relA = contactA.getRelation();
             if (relA == null || relA.getRelationCategory() == null) continue;
@@ -63,23 +71,20 @@ public class RelationService {
                 String catB    = relB.getRelationCategory();
                 String genderB = relB.getGender() != null ? relB.getGender() : "N";
 
-                String inferredName = rulesMap.get(
-                        catA + "|" + genderA + "|" + catB + "|" + genderB);
-
+                // Try most-specific match first, then fallbacks
+                String inferredName = rulesMap.get(catA + "|" + genderA + "|" + catB + "|" + genderB);
                 if (inferredName == null)
-                    inferredName = rulesMap.get(
-                            catA + "|" + genderA + "|" + catB + "|N");
-
+                    inferredName = rulesMap.get(catA + "|" + genderA + "|" + catB + "|N");
                 if (inferredName == null)
-                    inferredName = rulesMap.get(
-                            catA + "|N|" + catB + "|" + genderB);
-
+                    inferredName = rulesMap.get(catA + "|N|" + catB + "|" + genderB);
                 if (inferredName == null) continue;
 
+                // Verify the inferred relation name exists in relations master
                 Optional<Relation> inferredRelation =
                         relationRepository.findByRelationNameIgnoreCase(inferredName);
                 if (inferredRelation.isEmpty()) continue;
 
+                // Deduplicate A→B (we keep both A→B and B→A as separate suggestions)
                 String dedupKey = contactA.getId() + "-" + contactB.getId();
                 if (!seen.contains(dedupKey)) {
                     seen.add(dedupKey);
@@ -92,7 +97,7 @@ public class RelationService {
             }
         }
 
-        System.out.println("=== TOTAL SUGGESTIONS: " + suggestions.size());
+        System.out.println("=== TOTAL SUGGESTIONS FOR USER [" + user.getUsername() + "]: " + suggestions.size());
         return suggestions;
     }
 }

@@ -63,15 +63,15 @@ UPDATE relations SET relation_category = 'COUSIN'
 -- =============================================
 -- SAMPLE CONTACTS
 -- =============================================
-INSERT INTO contact (name, phone, email, relation_id)
-SELECT 'John Doe', '9876543210', 'john@example.com', r.id
-FROM relations r WHERE r.relation_name = 'Brother'
-ON CONFLICT (phone) DO NOTHING;
-
-INSERT INTO contact (name, phone, email, relation_id)
-SELECT 'Jane Doe', '9876543211', 'jane@example.com', r.id
-FROM relations r WHERE r.relation_name = 'Sister'
-ON CONFLICT (phone) DO NOTHING;
+--INSERT INTO contact (name, phone, email, relation_id)
+--SELECT 'John Doe', '9876543210', 'john@example.com', r.id
+--FROM relations r WHERE r.relation_name = 'Brother'
+--ON CONFLICT (phone) DO NOTHING;
+--
+--INSERT INTO contact (name, phone, email, relation_id)
+--SELECT 'Jane Doe', '9876543211', 'jane@example.com', r.id
+--FROM relations r WHERE r.relation_name = 'Sister'
+--ON CONFLICT (phone) DO NOTHING;
 
 -- =============================================
 -- INFERENCE RULES

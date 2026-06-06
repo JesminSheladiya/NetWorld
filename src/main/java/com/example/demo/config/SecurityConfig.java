@@ -24,7 +24,8 @@ public class SecurityConfig {
     private final UserDetailsService uds;
 
     public SecurityConfig(JwtAuthenticationFilter jwtFilter, UserDetailsService uds) {
-        this.jwtFilter = jwtFilter; this.uds = uds;
+        this.jwtFilter = jwtFilter;
+        this.uds = uds;
     }
 
     @Bean
@@ -32,11 +33,11 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .cors(cors -> {})
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/api/auth/**").permitAll()
-                    .requestMatchers("/api/contacts/inferred-relations").permitAll()
-                    .requestMatchers("/api/contacts/**").authenticated()
-                    .requestMatchers("/uploads/**").permitAll()
-                    .anyRequest().authenticated()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        // .requestMatchers("/api/contacts/inferred-relations").permitAll()
+                        .requestMatchers("/api/contacts/**").authenticated()
+                        .requestMatchers("/uploads/**").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
@@ -52,7 +53,8 @@ public class SecurityConfig {
         return p;
     }
 
-    @Bean public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
+    @Bean
+    public PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(); }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration cfg) throws Exception {
