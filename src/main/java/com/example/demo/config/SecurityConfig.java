@@ -34,9 +34,9 @@ public class SecurityConfig {
                 .cors(cors -> {})
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        // .requestMatchers("/api/contacts/inferred-relations").permitAll()
-                        .requestMatchers("/api/contacts/**").authenticated()
                         .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers("/api/contacts/**").authenticated()
+                        .requestMatchers("/api/user-relations/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
