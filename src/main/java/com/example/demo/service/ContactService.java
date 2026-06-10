@@ -5,26 +5,36 @@ import com.example.demo.mapper.ContactMapper;
 import com.example.demo.model.Contact;
 import com.example.demo.model.Relation;
 import com.example.demo.model.User;
+import com.example.demo.model.UserRelation;
 import com.example.demo.repository.ContactRepository;
 import com.example.demo.repository.ContactSpecification;
 import com.example.demo.repository.RelationRepository;
+import com.example.demo.repository.UserRelationRepository;
+import com.example.demo.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+
 import java.util.List;
 import java.util.Optional;
 
 @Service
 public class ContactService {
 
-    private final ContactRepository contactRepository;
-    private final RelationRepository relationRepository;
+    private final ContactRepository      contactRepository;
+    private final RelationRepository     relationRepository;
+    private final UserRepository         userRepository;
+    private final UserRelationRepository userRelationRepository;
 
     public ContactService(ContactRepository contactRepository,
-                          RelationRepository relationRepository) {
-        this.contactRepository = contactRepository;
-        this.relationRepository = relationRepository;
+                          RelationRepository relationRepository,
+                          UserRepository userRepository,
+                          UserRelationRepository userRelationRepository) {
+        this.contactRepository      = contactRepository;
+        this.relationRepository     = relationRepository;
+        this.userRepository         = userRepository;
+        this.userRelationRepository = userRelationRepository;
     }
 
     public List<Contact> getAllContacts(User user) {
@@ -39,17 +49,44 @@ public class ContactService {
         return contactRepository.findById(id);
     }
 
-    public Contact saveContact(ContactDTO dto, User user) {
+    public Contact saveContact(ContactDTO dto, User currentUser) {
         Contact contact = ContactMapper.toEntity(dto);
-        contact.setUser(user);
+        contact.setUser(currentUser);
 
+        // ── FIX: use a final local variable for lambda ──
+        final Relation finalRelation;
         if (dto.getRelationId() != null) {
-            Relation relation = relationRepository.findById(dto.getRelationId())
-                    .orElseThrow(() -> new IllegalArgumentException("Invalid relation ID: " + dto.getRelationId()));
-            contact.setRelation(relation);
+            finalRelation = relationRepository.findById(dto.getRelationId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Invalid relation ID: " + dto.getRelationId()));
+            contact.setRelation(finalRelation);
+        } else {
+            finalRelation = null;
         }
 
-        return contactRepository.save(contact);
+        Contact saved = contactRepository.save(contact);
+
+        // Auto-create PENDING UserRelation if contact email = a registered user
+        if (dto.getEmail() != null && finalRelation != null) {
+            Optional<User> contactUserOpt = userRepository.findByEmail(dto.getEmail());
+            contactUserOpt.ifPresent(contactUser -> {
+                if (contactUser.getId().equals(currentUser.getId())) return;
+
+                boolean alreadyExists = userRelationRepository
+                        .findByFromUserAndToUser(currentUser, contactUser)
+                        .isPresent();
+                if (alreadyExists) return;
+
+                UserRelation ur = new UserRelation(currentUser, contactUser, finalRelation, "PENDING");
+                userRelationRepository.save(ur);
+
+                System.out.println("=== UserRelation created: "
+                        + currentUser.getEmail() + " → " + contactUser.getEmail()
+                        + " as " + finalRelation.getRelationName() + " [PENDING]");
+            });
+        }
+
+        return saved;
     }
 
     public Optional<Contact> updateContact(Long id, ContactDTO dto) {

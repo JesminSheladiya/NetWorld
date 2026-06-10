@@ -16,4 +16,5 @@ public interface ContactRepository extends JpaRepository<Contact, Long>, JpaSpec
 
     List<Contact> findByUser(User user);
     Page<Contact> findByUser(User user, Pageable pageable);
+
 }
