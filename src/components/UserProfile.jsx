@@ -1,76 +1,117 @@
 import { useState, useEffect } from "react";
 import { Modal, Form, Input, Button, message, Avatar, Upload, Tabs, Spin, Select } from "antd";
-import { UserOutlined, PhoneOutlined, LockOutlined, EditOutlined, CameraOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+    UserOutlined, PhoneOutlined, LockOutlined, EditOutlined,
+    CameraOutlined, SearchOutlined, CheckOutlined, CloseOutlined,
+    TeamOutlined, BellOutlined, BulbOutlined, LinkOutlined
+} from "@ant-design/icons";
 import ImgCrop from "antd-img-crop";
 import { updateProfile, getUser } from "../Services/authService";
 import { http } from "../Services/https";
 
-const BASE         = process.env.REACT_APP_API_URL?.replace("/api/contacts", "/api") || "http://localhost:8080/api";
+const BASE = process.env.REACT_APP_API_URL?.replace("/api/contacts", "/api") || "http://localhost:8080/api";
 const CONTACTS_URL = process.env.REACT_APP_API_URL || "http://localhost:8080/api/contacts";
 
-const COLORS = ["#6366f1","#0ea5e9","#10b981","#f59e0b","#8b5cf6","#ec4899"];
+const COLORS = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
 const avatarBg = (name = "") => COLORS[(name.charCodeAt(0) || 0) % COLORS.length];
 
 const relStyle = (rel = "") => {
     const r = rel.toLowerCase();
-    if (r.includes("brother") || r.includes("sister"))  return { color: "#60a5fa", bg: "rgba(96,165,250,0.1)"  };
-    if (r.includes("father")  || r.includes("mother"))  return { color: "#a78bfa", bg: "rgba(167,139,250,0.1)" };
-    if (r.includes("son")     || r.includes("daughter"))return { color: "#34d399", bg: "rgba(52,211,153,0.1)"  };
-    if (r.includes("grand"))                             return { color: "#fbbf24", bg: "rgba(251,191,36,0.1)"  };
-    if (r.includes("husband") || r.includes("wife"))    return { color: "#f472b6", bg: "rgba(244,114,182,0.1)" };
-    return                                                      { color: "#22d3ee", bg: "rgba(34,211,238,0.1)"  };
+    if (r.includes("brother") || r.includes("sister")) return { color: "#60a5fa", bg: "rgba(96,165,250,0.12)", border: "rgba(96,165,250,0.3)" };
+    if (r.includes("father") || r.includes("mother")) return { color: "#a78bfa", bg: "rgba(167,139,250,0.12)", border: "rgba(167,139,250,0.3)" };
+    if (r.includes("son") || r.includes("daughter")) return { color: "#34d399", bg: "rgba(52,211,153,0.12)", border: "rgba(52,211,153,0.3)" };
+    if (r.includes("grand")) return { color: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.3)" };
+    if (r.includes("husband") || r.includes("wife")) return { color: "#f472b6", bg: "rgba(244,114,182,0.12)", border: "rgba(244,114,182,0.3)" };
+    return { color: "#22d3ee", bg: "rgba(34,211,238,0.12)", border: "rgba(34,211,238,0.3)" };
 };
 
-const Chip = ({ rel }) => {
+const RelChip = ({ rel }) => {
     if (!rel) return null;
     const s = relStyle(rel);
     return (
         <span style={{
-            color: s.color, background: s.bg, border: `1px solid ${s.color}30`,
-            borderRadius: 5, padding: "1px 8px", fontSize: 11, fontWeight: 600, whiteSpace: "nowrap",
+            color: s.color, background: s.bg, border: `1px solid ${s.border}`,
+            borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 600,
+            whiteSpace: "nowrap", letterSpacing: 0.3,
         }}>
             {rel.charAt(0).toUpperCase() + rel.slice(1).toLowerCase()}
         </span>
     );
 };
 
-const Usr = ({ name, pic, size = 36 }) => (
-    <Avatar size={size} src={pic || null}
-        style={{ backgroundColor: pic ? "transparent" : avatarBg(name || ""), fontWeight: 700, flexShrink: 0 }}>
+const UserAvatar = ({ name, pic, size = 36 }) => (
+    <Avatar
+        size={size}
+        src={pic || null}
+        style={{
+            backgroundColor: pic ? "transparent" : avatarBg(name || ""),
+            fontWeight: 700,
+            flexShrink: 0,
+            border: "2px solid rgba(255,255,255,0.08)",
+        }}
+    >
         {!pic && (name?.charAt(0) || "?").toUpperCase()}
     </Avatar>
 );
 
-const Row = ({ name, email, pic, rel, reason, actions }) => (
+const PersonRow = ({ name, email, pic, rel, reason, actions }) => (
     <div style={{
-        display: "flex", alignItems: "center", gap: 10,
-        padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)",
-    }}>
-        <Usr name={name} pic={pic} />
+        display: "flex", alignItems: "center", gap: 12,
+        padding: "10px 14px",
+        borderRadius: 10,
+        marginBottom: 6,
+        background: "rgba(255,255,255,0.02)",
+        border: "1px solid rgba(255,255,255,0.05)",
+        transition: "all 0.2s",
+    }}
+        onMouseEnter={e => e.currentTarget.style.background = "rgba(99,102,241,0.06)"}
+        onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
+    >
+        <UserAvatar name={name} pic={pic} />
         <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+            <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {name}
+            </div>
             {reason
-                ? <div style={{ color: "#475569", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{reason}</div>
-                : email && <div style={{ color: "#475569", fontSize: 11 }}>{email}</div>
+                ? <div style={{ color: "#64748b", fontSize: 11, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{reason}</div>
+                : email && <div style={{ color: "#64748b", fontSize: 11, marginTop: 1 }}>{email}</div>
             }
         </div>
-        {rel && <Chip rel={rel} />}
-        {actions && <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>{actions}</div>}
+        {rel && <RelChip rel={rel} />}
+        {actions && <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>{actions}</div>}
     </div>
 );
 
-const Btn = ({ onClick, accept }) => (
+const ActionBtn = ({ onClick, accept }) => (
     <button onClick={onClick} style={{
-        width: 26, height: 26, borderRadius: 5, cursor: "pointer", fontSize: 12, border: "none",
-        background: accept ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.15)",
+        width: 28, height: 28, borderRadius: 8, cursor: "pointer", fontSize: 13, border: "none",
+        background: accept ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.12)",
         color: accept ? "#10b981" : "#ef4444",
-    }}>
-        {accept ? "✓" : "✕"}
+        display: "flex", alignItems: "center", justifyContent: "center",
+        transition: "all 0.2s",
+    }}
+        onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
+        onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+    >
+        {accept ? <CheckOutlined style={{ fontSize: 12 }} /> : <CloseOutlined style={{ fontSize: 12 }} />}
     </button>
 );
 
-const Empty = ({ text }) => (
-    <div style={{ textAlign: "center", padding: "24px 0", color: "#334155", fontSize: 12 }}>{text}</div>
+const EmptyState = ({ icon, text }) => (
+    <div style={{ textAlign: "center", padding: "32px 0", color: "#334155" }}>
+        <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.4 }}>{icon}</div>
+        <div style={{ fontSize: 12, color: "#475569" }}>{text}</div>
+    </div>
+);
+
+const SectionLabel = ({ children }) => (
+    <div style={{
+        fontSize: 10, fontWeight: 700, color: "#334155",
+        letterSpacing: 1.2, textTransform: "uppercase",
+        marginBottom: 8, marginTop: 4,
+    }}>
+        {children}
+    </div>
 );
 
 const inputStyle = {
@@ -81,24 +122,24 @@ const inputStyle = {
 function UserProfile({ open, onClose, onProfileUpdate }) {
     const user = getUser();
 
-    const [editing, setEditing]     = useState(false);
-    const [saving,  setSaving]      = useState(false);
-    const [form]                    = Form.useForm();
-    const [preview, setPreview]     = useState(user.profilePicture || null);
-    const [newImg,  setNewImg]      = useState(null);
+    const [editing, setEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [form] = Form.useForm();
+    const [preview, setPreview] = useState(user.profilePicture || null);
+    const [newImg, setNewImg] = useState(null);
 
-    const [connections,  setConnections]  = useState([]);
-    const [pending,      setPending]      = useState([]);
-    const [suggestions,  setSuggestions]  = useState([]);
-    const [relations,    setRelations]    = useState([]);
-    const [loading,      setLoading]      = useState(false);
+    const [connections, setConnections] = useState([]);
+    const [pending, setPending] = useState([]);
+    const [suggestions, setSuggestions] = useState([]);
+    const [relations, setRelations] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    const [query,       setQuery]       = useState("");
-    const [results,     setResults]     = useState([]);
-    const [searching,   setSearching]   = useState(false);
-    const [relMap,      setRelMap]      = useState({});
-    const [sendingMap,  setSendingMap]  = useState({});
-    const [sentMap,     setSentMap]     = useState({});
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState([]);
+    const [searching, setSearching] = useState(false);
+    const [relMap, setRelMap] = useState({});
+    const [sendingMap, setSendingMap] = useState({});
+    const [sentMap, setSentMap] = useState({});
 
     useEffect(() => {
         if (open) { fetchAll(); fetchRelations(); }
@@ -144,7 +185,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
         finally { setSendingMap(p => ({ ...p, [email]: false })); }
     };
 
-    const acceptPending  = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/accept`);  fetchAll(); } catch { message.error("Failed!"); } };
+    const acceptPending = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/accept`); fetchAll(); } catch { message.error("Failed!"); } };
     const declinePending = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/decline`); fetchAll(); } catch { message.error("Failed!"); } };
 
     const acceptSuggestion = async (s) => {
@@ -172,83 +213,184 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
         finally { setSaving(false); }
     };
 
+    /* ── Stat badge ── */
+    const StatBadge = ({ count, label, color }) => (
+        <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center",
+            padding: "8px 14px", borderRadius: 10,
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            minWidth: 64,
+        }}>
+            <span style={{ fontSize: 18, fontWeight: 800, color }}>{count}</span>
+            <span style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>{label}</span>
+        </div>
+    );
+
     const tabItems = [
+        /* ── PROFILE TAB ── */
         {
             key: "profile",
-            label: "Profile",
+            label: (
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <UserOutlined style={{ fontSize: 12 }} /> Profile
+                </span>
+            ),
             children: (
                 <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                        <Usr name={user.fullName || user.username} pic={user.profilePicture} size={48} />
-                        <div>
-                            <div style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 15 }}>{user.fullName || user.username}</div>
-                            <div style={{ color: "#475569", fontSize: 12 }}>{user.email}</div>
+                    {/* Avatar + name block */}
+                    <div style={{
+                        display: "flex", alignItems: "center", gap: 14,
+                        padding: "12px 14px",
+                        background: "linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05))",
+                        borderRadius: 12,
+                        border: "1px solid rgba(99,102,241,0.12)",
+                        marginBottom: 14,
+                    }}>
+                        <div style={{ position: "relative" }}>
+                            <UserAvatar name={user.fullName || user.username} pic={user.profilePicture} size={52} />
+                            <div style={{
+                                position: "absolute", bottom: 0, right: -2,
+                                width: 14, height: 14, borderRadius: "50%",
+                                background: "#10b981", border: "2px solid #0a0e1a",
+                            }} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>
+                                {user.fullName || user.username}
+                            </div>
+                            <div style={{ color: "#64748b", fontSize: 11, marginTop: 3 }}>{user.email}</div>
+                            <div style={{
+                                display: "inline-block", marginTop: 5,
+                                background: "rgba(99,102,241,0.15)", color: "#818cf8",
+                                borderRadius: 20, padding: "1px 8px", fontSize: 10, fontWeight: 600,
+                            }}>
+                                {user.role || "USER"}
+                            </div>
                         </div>
                     </div>
 
-                    {[
-                        ["Phone",    user.phone || "—"],
-                        ["Username", user.username],
-                        ["Role",     user.role || "USER"],
-                    ].map(([l, v]) => (
-                        <div key={l} style={{
-                            display: "flex", justifyContent: "space-between",
-                            padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    {/* Info rows */}
+                    <div style={{ marginBottom: 14 }}>
+                        {[
+                            ["Phone", user.phone || "—", "📞"],
+                            ["Username", user.username, "👤"],
+                        ].map(([l, v, icon]) => (
+                            <div key={l} style={{
+                                display: "flex", justifyContent: "space-between", alignItems: "center",
+                                padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)",
+                                fontSize: 12,
+                            }}>
+                                <span style={{ color: "#475569", display: "flex", alignItems: "center", gap: 6 }}>
+                                    <span style={{ fontSize: 11 }}>{icon}</span>{l}
+                                </span>
+                                <span style={{ color: "#94a3b8", fontWeight: 500 }}>{v}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Stats */}
+                    <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+                        <StatBadge count={connections.length} label="Connected" color="#6366f1" />
+                        <StatBadge count={pending.length} label="Requests" color="#f59e0b" />
+                        <StatBadge count={suggestions.length} label="Suggested" color="#8b5cf6" />
+                    </div>
+
+                    <Button
+                        size="small"
+                        icon={<EditOutlined />}
+                        style={{
+                            borderRadius: 8, borderColor: "rgba(99,102,241,0.4)",
+                            color: "#a78bfa", background: "rgba(99,102,241,0.08)",
                             fontSize: 12,
-                        }}>
-                            <span style={{ color: "#475569" }}>{l}</span>
-                            <span style={{ color: "#94a3b8" }}>{v}</span>
-                        </div>
-                    ))}
-
-                    <div style={{ display: "flex", gap: 16, marginTop: 14, fontSize: 12, color: "#475569" }}>
-                        <span><b style={{ color: "#f1f5f9" }}>{connections.length}</b> Connected</span>
-                        <span><b style={{ color: "#f59e0b" }}>{pending.length}</b> Requests</span>
-                        <span><b style={{ color: "#8b5cf6" }}>{suggestions.length}</b> Suggested</span>
-                    </div>
-
-                    <Button size="small" icon={<EditOutlined />}
-                        style={{ marginTop: 14, borderRadius: 6, borderColor: "rgba(99,102,241,0.4)", color: "#a78bfa" }}
-                        onClick={() => { form.setFieldsValue({ fullName: user.fullName, phone: user.phone }); setPreview(user.profilePicture || null); setNewImg(null); setEditing(true); }}>
+                        }}
+                        onClick={() => {
+                            form.setFieldsValue({ fullName: user.fullName, phone: user.phone });
+                            setPreview(user.profilePicture || null);
+                            setNewImg(null);
+                            setEditing(true);
+                        }}
+                    >
                         Edit Profile
                     </Button>
                 </div>
             ),
         },
+
+        /* ── FIND TAB ── */
         {
             key: "find",
-            label: "Find",
+            label: (
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <SearchOutlined style={{ fontSize: 12 }} /> Find
+                </span>
+            ),
             children: (
                 <div>
                     <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                        <Input placeholder="Search by name or email"
-                            value={query} onChange={e => setQuery(e.target.value)} onPressEnter={search}
-                            style={{ ...inputStyle, flex: 1, height: 34 }}
-                            prefix={<SearchOutlined style={{ color: "#475569" }} />} />
-                        <Button size="small" loading={searching} onClick={search}
-                            style={{ borderRadius: 6, background: "#6366f1", borderColor: "#6366f1", color: "#fff", height: 34 }}>
-                            Go
+                        <Input
+                            placeholder="Search by name or email…"
+                            value={query}
+                            onChange={e => setQuery(e.target.value)}
+                            onPressEnter={search}
+                            style={{ ...inputStyle, flex: 1, height: 36 }}
+                            prefix={<SearchOutlined style={{ color: "#475569" }} />}
+                        />
+                        <Button
+                            size="small"
+                            loading={searching}
+                            onClick={search}
+                            style={{
+                                borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                                borderColor: "#6366f1", color: "#fff", height: 36, padding: "0 16px",
+                            }}
+                        >
+                            Search
                         </Button>
                     </div>
+
                     {results.length === 0
-                        ? <Empty text={query ? "No users found" : "Search for someone"} />
+                        ? <EmptyState icon="🔍" text={query ? "No users found" : "Search for someone to connect"} />
                         : results.map(u => (
-                            <Row key={u.email} name={u.name} email={u.email} pic={u.profilePic}
+                            <PersonRow
+                                key={u.email}
+                                name={u.name}
+                                email={u.email}
+                                pic={u.profilePic}
                                 actions={sentMap[u.email]
-                                    ? <span style={{ color: "#10b981", fontSize: 11 }}>✓ Sent</span>
+                                    ? <span style={{
+                                        color: "#10b981", fontSize: 11, fontWeight: 600,
+                                        background: "rgba(16,185,129,0.1)", borderRadius: 20,
+                                        padding: "3px 10px", border: "1px solid rgba(16,185,129,0.25)",
+                                    }}>✓ Sent</span>
                                     : <>
-                                        <Select size="small" placeholder="Relation" style={{ width: 110 }}
+                                        <Select
+                                            size="small"
+                                            placeholder="Relation"
+                                            style={{ width: 100 }}
                                             value={relMap[u.email] || undefined}
                                             onChange={v => setRelMap(p => ({ ...p, [u.email]: v }))}
-                                            showSearch optionFilterProp="children" popupMatchSelectWidth={false}>
+                                            showSearch
+                                            optionFilterProp="children"
+                                            popupMatchSelectWidth={false}
+                                        >
                                             {relations.map(r => (
                                                 <Select.Option key={r.id} value={r.id}>
                                                     {r.relationName.charAt(0).toUpperCase() + r.relationName.slice(1).toLowerCase()}
                                                 </Select.Option>
                                             ))}
                                         </Select>
-                                        <button onClick={() => sendRequest(u.email)} disabled={sendingMap[u.email]}
-                                            style={{ background: "#6366f1", border: "none", borderRadius: 5, color: "#fff", cursor: "pointer", width: 26, height: 26, fontSize: 13 }}>
+                                        <button
+                                            onClick={() => sendRequest(u.email)}
+                                            disabled={sendingMap[u.email]}
+                                            style={{
+                                                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                                                border: "none", borderRadius: 8, color: "#fff",
+                                                cursor: "pointer", width: 30, height: 30, fontSize: 14,
+                                                display: "flex", alignItems: "center", justifyContent: "center",
+                                                transition: "all 0.2s",
+                                            }}
+                                        >
                                             →
                                         </button>
                                     </>
@@ -259,51 +401,105 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                 </div>
             ),
         },
+
+        /* ── CONNECTIONS TAB ── */
         {
             key: "connected",
-            label: `Connected ${connections.length > 0 ? `(${connections.length})` : ""}`,
+            label: (
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <LinkOutlined style={{ fontSize: 12 }} />
+                    Connected
+                    {connections.length > 0 && (
+                        <span style={{
+                            background: "#6366f1", color: "#fff", borderRadius: 20,
+                            padding: "0 6px", fontSize: 9, fontWeight: 700, lineHeight: "16px",
+                        }}>{connections.length}</span>
+                    )}
+                </span>
+            ),
             children: (
                 <Spin spinning={loading}>
                     {connections.length === 0 && !loading
-                        ? <Empty text="No connections yet" />
-                        : connections.map((c, i) => (
-                            <Row key={i} name={c.suggestedUserName} email={c.suggestedUserEmail}
-                                pic={c.suggestedUserProfilePic} rel={c.inferredRelation} />
-                        ))
+                        ? <EmptyState icon="🔗" text="No connections yet — find people to connect with!" />
+                        : <>
+                            <SectionLabel>Your Network ({connections.length})</SectionLabel>
+                            {connections.map((c, i) => (
+                                <PersonRow key={i} name={c.suggestedUserName} email={c.suggestedUserEmail}
+                                    pic={c.suggestedUserProfilePic} rel={c.inferredRelation} />
+                            ))}
+                        </>
                     }
                 </Spin>
             ),
         },
+
+        /* ── REQUESTS TAB ── */
         {
             key: "requests",
-            label: `Requests ${pending.length > 0 ? `(${pending.length})` : ""}`,
+            label: (
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <BellOutlined style={{ fontSize: 12 }} />
+                    Requests
+                    {pending.length > 0 && (
+                        <span style={{
+                            background: "#f59e0b", color: "#000", borderRadius: 20,
+                            padding: "0 6px", fontSize: 9, fontWeight: 700, lineHeight: "16px",
+                        }}>{pending.length}</span>
+                    )}
+                </span>
+            ),
             children: (
                 <Spin spinning={loading}>
                     {pending.length === 0 && !loading
-                        ? <Empty text="No pending requests" />
-                        : pending.map((p, i) => (
-                            <Row key={i} name={p.suggestedUserName} pic={p.suggestedUserProfilePic}
-                                rel={p.inferredRelation} reason={p.reason}
-                                actions={<><Btn accept onClick={() => acceptPending(p.pendingRelationId)} /><Btn onClick={() => declinePending(p.pendingRelationId)} /></>}
-                            />
-                        ))
+                        ? <EmptyState icon="🔔" text="No pending requests" />
+                        : <>
+                            <SectionLabel>Pending Requests ({pending.length})</SectionLabel>
+                            {pending.map((p, i) => (
+                                <PersonRow key={i} name={p.suggestedUserName} pic={p.suggestedUserProfilePic}
+                                    rel={p.inferredRelation} reason={p.reason}
+                                    actions={<>
+                                        <ActionBtn accept onClick={() => acceptPending(p.pendingRelationId)} />
+                                        <ActionBtn onClick={() => declinePending(p.pendingRelationId)} />
+                                    </>}
+                                />
+                            ))}
+                        </>
                     }
                 </Spin>
             ),
         },
+
+        /* ── SUGGESTIONS TAB ── */
         {
             key: "suggested",
-            label: `Suggested ${suggestions.length > 0 ? `(${suggestions.length})` : ""}`,
+            label: (
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <BulbOutlined style={{ fontSize: 12 }} />
+                    Suggested
+                    {suggestions.length > 0 && (
+                        <span style={{
+                            background: "#8b5cf6", color: "#fff", borderRadius: 20,
+                            padding: "0 6px", fontSize: 9, fontWeight: 700, lineHeight: "16px",
+                        }}>{suggestions.length}</span>
+                    )}
+                </span>
+            ),
             children: (
                 <Spin spinning={loading}>
                     {suggestions.length === 0 && !loading
-                        ? <Empty text="No suggestions yet" />
-                        : suggestions.map((s, i) => (
-                            <Row key={i} name={s.suggestedUserName} pic={s.suggestedUserProfilePic}
-                                rel={s.inferredRelation} reason={s.reason}
-                                actions={<><Btn accept onClick={() => acceptSuggestion(s)} /><Btn onClick={() => dismissSuggestion(s)} /></>}
-                            />
-                        ))
+                        ? <EmptyState icon="✨" text="No suggestions yet" />
+                        : <>
+                            <SectionLabel>People You May Know ({suggestions.length})</SectionLabel>
+                            {suggestions.map((s, i) => (
+                                <PersonRow key={i} name={s.suggestedUserName} pic={s.suggestedUserProfilePic}
+                                    rel={s.inferredRelation} reason={s.reason}
+                                    actions={<>
+                                        <ActionBtn accept onClick={() => acceptSuggestion(s)} />
+                                        <ActionBtn onClick={() => dismissSuggestion(s)} />
+                                    </>}
+                                />
+                            ))}
+                        </>
                     }
                 </Spin>
             ),
@@ -311,75 +507,123 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
     ];
 
     return (
-        <Modal open={open} onCancel={() => { setEditing(false); onClose(); }}
-            footer={null} width={550} centered closable
+        <Modal
+            open={open}
+            onCancel={() => { setEditing(false); onClose(); }}
+            footer={null}
+            width={500}
+            centered
+            closable
             title={
-                <span style={{ color: "#a78bfa", fontSize: 14, fontWeight: 700 }}>
-                    {editing ? "Edit Profile" : "Profile"}
+                <span style={{ color: "#a78bfa", fontSize: 14, fontWeight: 700, letterSpacing: 0.3 }}>
+                    {editing ? "✏️ Edit Profile" : "👤 My Profile"}
                 </span>
             }
             styles={{
-                content: { background: "#0a0e1a", border: "1px solid rgba(99,102,241,0.18)", borderRadius: 12, padding: 0 },
-                header:  { background: "#0a0e1a", borderBottom: "1px solid rgba(255,255,255,0.06)", padding: "12px 18px", margin: 0 },
-                body:    { background: "#0a0e1a", color: "#f8fafc", padding: "14px 18px 18px" },
-                mask:    { backgroundColor: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" },
+                content: {
+                    background: "#0a0e1a",
+                    border: "1px solid rgba(99,102,241,0.2)",
+                    borderRadius: 14, padding: 0,
+                    boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
+                },
+                header: {
+                    background: "#0a0e1a",
+                    borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    padding: "12px 18px", margin: 0,
+                },
+                body: { background: "#0a0e1a", color: "#f8fafc", padding: "14px 18px 18px" },
+                mask: { backgroundColor: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" },
             }}
         >
             {!editing && (
-                <Tabs items={tabItems} size="small"
-                    tabBarStyle={{ borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: 12, fontSize: 12 }} />
+                <Tabs
+                    items={tabItems}
+                    size="small"
+                    tabBarStyle={{
+                        borderBottom: "1px solid rgba(255,255,255,0.06)",
+                        marginBottom: 14,
+                        fontSize: 12,
+                    }}
+                />
             )}
 
             {editing && (
                 <Form form={form} layout="vertical" onFinish={save}>
-                    <div style={{ textAlign: "center", marginBottom: 16 }}>
+                    {/* Avatar Upload */}
+                    <div style={{ textAlign: "center", marginBottom: 18 }}>
                         <ImgCrop rotationSlider aspect={1}>
-                            <Upload showUploadList={false} customRequest={() => {}}
+                            <Upload
+                                showUploadList={false}
+                                customRequest={() => { }}
                                 beforeUpload={file => {
                                     if (!file.type.startsWith("image/")) { message.error("Images only!"); return Upload.LIST_IGNORE; }
-                                    if (file.size > 5 * 1024 * 1024)    { message.error("Max 5MB!");     return Upload.LIST_IGNORE; }
+                                    if (file.size > 5 * 1024 * 1024) { message.error("Max 5MB!"); return Upload.LIST_IGNORE; }
                                     const r = new FileReader();
                                     r.onload = e => { setPreview(e.target.result); setNewImg(e.target.result); };
                                     r.readAsDataURL(file); return false;
-                                }}>
+                                }}
+                            >
                                 <div style={{ cursor: "pointer", position: "relative", display: "inline-block" }}>
-                                    <Avatar size={64} src={preview || null} icon={!preview && <UserOutlined />}
-                                        style={{ background: "#6366f1", color: "#fff" }} />
+                                    <Avatar
+                                        size={70}
+                                        src={preview || null}
+                                        icon={!preview && <UserOutlined />}
+                                        style={{
+                                            background: preview ? "transparent" : "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                                            color: "#fff",
+                                            border: "3px solid rgba(99,102,241,0.3)",
+                                        }}
+                                    />
                                     <div style={{
-                                        position: "absolute", bottom: 0, right: 0, background: "#6366f1",
-                                        borderRadius: "50%", width: 20, height: 20,
-                                        display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #0a0e1a",
+                                        position: "absolute", bottom: 0, right: 0,
+                                        background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
+                                        borderRadius: "50%", width: 22, height: 22,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        border: "2px solid #0a0e1a",
                                     }}>
-                                        <CameraOutlined style={{ color: "#fff", fontSize: 9 }} />
+                                        <CameraOutlined style={{ color: "#fff", fontSize: 10 }} />
                                     </div>
                                 </div>
                             </Upload>
                         </ImgCrop>
-                        {preview && <Button type="link" danger size="small" style={{ display: "block", margin: "4px auto 0" }}
-                            onClick={() => { setPreview(null); setNewImg(""); }}>Remove</Button>}
+                        {preview && (
+                            <Button
+                                type="link" danger size="small"
+                                style={{ display: "block", margin: "6px auto 0", fontSize: 11 }}
+                                onClick={() => { setPreview(null); setNewImg(""); }}
+                            >
+                                Remove Photo
+                            </Button>
+                        )}
                     </div>
 
+                    {/* Fields */}
                     {[
-                        { n: "fullName", l: "Full Name", icon: <UserOutlined />,  ph: "Full name", rules: [] },
-                        { n: "phone",    l: "Phone",     icon: <PhoneOutlined />, ph: "10-digit phone",
-                          rules: [{ pattern: /^[0-9]{10}$/, message: "10 digits" }] },
+                        { n: "fullName", l: "Full Name", icon: <UserOutlined />, ph: "Full name", rules: [] },
+                        {
+                            n: "phone", l: "Phone", icon: <PhoneOutlined />, ph: "10-digit phone",
+                            rules: [{ pattern: /^[0-9]{10}$/, message: "10 digits" }]
+                        },
                     ].map(({ n, l, icon, ph, rules }) => (
                         <Form.Item key={n} name={n} rules={rules}
                             label={<span style={{ color: "#64748b", fontSize: 11 }}>{l}</span>}
-                            style={{ marginBottom: 12 }}>
+                            style={{ marginBottom: 12 }}
+                        >
                             <Input prefix={<span style={{ color: "#6366f1" }}>{icon}</span>} placeholder={ph} style={inputStyle} />
                         </Form.Item>
                     ))}
 
+                    {/* Password Section */}
                     <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", margin: "12px 0", paddingTop: 12 }}>
                         <div style={{ color: "#334155", fontSize: 10, letterSpacing: 1, marginBottom: 10 }}>CHANGE PASSWORD</div>
                         {[
                             { n: "currentPassword", l: "Current", ph: "Current password", rules: [] },
-                            { n: "newPassword",     l: "New",     ph: "New password", rules: [{ min: 8, message: "Min 8 chars" }] },
+                            { n: "newPassword", l: "New", ph: "New password", rules: [{ min: 8, message: "Min 8 chars" }] },
                         ].map(({ n, l, ph, rules }) => (
                             <Form.Item key={n} name={n} rules={rules}
                                 label={<span style={{ color: "#64748b", fontSize: 11 }}>{l}</span>}
-                                style={{ marginBottom: 12 }}>
+                                style={{ marginBottom: 12 }}
+                            >
                                 <Input.Password prefix={<LockOutlined style={{ color: "#6366f1" }} />} placeholder={ph} style={inputStyle} />
                             </Form.Item>
                         ))}
@@ -387,9 +631,13 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
 
                     <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
                         <Button size="small" onClick={() => setEditing(false)}
-                            style={{ borderRadius: 6, borderColor: "rgba(255,255,255,0.1)", color: "#64748b" }}>Cancel</Button>
+                            style={{ borderRadius: 8, borderColor: "rgba(255,255,255,0.1)", color: "#64748b" }}>
+                            Cancel
+                        </Button>
                         <Button size="small" type="primary" htmlType="submit" loading={saving}
-                            style={{ borderRadius: 6, background: "#6366f1", borderColor: "#6366f1" }}>Save</Button>
+                            style={{ borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none" }}>
+                            Save Changes
+                        </Button>
                     </div>
                 </Form>
             )}

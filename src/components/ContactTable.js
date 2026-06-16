@@ -388,11 +388,32 @@ function ContactsTable() {
             filterSearch: true,
             onFilter: (value, record) => record.relationId === value,
             render: (relation) => {
-                if (!relation) return "—";
+                if (!relation) return <span style={{ color: '#334155' }}>—</span>;
                 const name = typeof relation === 'string'
                     ? relation
                     : (relation.relationName || relation || `Relation ${relation.id}`);
-                return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+                const label = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+                const r = name.toLowerCase();
+                let color = '#22d3ee', bg = 'rgba(34,211,238,0.1)', border = 'rgba(34,211,238,0.25)';
+                if (r.includes('brother') || r.includes('sister'))   { color = '#60a5fa'; bg = 'rgba(96,165,250,0.1)';   border = 'rgba(96,165,250,0.25)';   }
+                else if (r.includes('father') || r.includes('mother')) { color = '#a78bfa'; bg = 'rgba(167,139,250,0.1)';  border = 'rgba(167,139,250,0.25)';  }
+                else if (r.includes('son') || r.includes('daughter')) { color = '#34d399'; bg = 'rgba(52,211,153,0.1)';   border = 'rgba(52,211,153,0.25)';   }
+                else if (r.includes('grand'))                         { color = '#fbbf24'; bg = 'rgba(251,191,36,0.1)';   border = 'rgba(251,191,36,0.25)';   }
+                else if (r.includes('husband') || r.includes('wife')) { color = '#f472b6'; bg = 'rgba(244,114,182,0.1)';  border = 'rgba(244,114,182,0.25)';  }
+                else if (r.includes('friend'))                        { color = '#f59e0b'; bg = 'rgba(245,158,11,0.1)';   border = 'rgba(245,158,11,0.25)';   }
+                else if (r.includes('uncle') || r.includes('aunt'))   { color = '#fb923c'; bg = 'rgba(251,146,60,0.1)';   border = 'rgba(251,146,60,0.25)';   }
+                return (
+                    <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        color, background: bg,
+                        border: `1px solid ${border}`,
+                        borderRadius: 20, padding: '3px 10px',
+                        fontSize: 12, fontWeight: 600,
+                        letterSpacing: 0.3, whiteSpace: 'nowrap',
+                    }}>
+                        {label}
+                    </span>
+                );
             },
         },
 
@@ -488,126 +509,117 @@ function ContactsTable() {
                                 size="middle"
                             />
                             {showSuggestions && (
-                                <Card
-                                    className="suggestions-card"
-                                    title={
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontSize: '20px' }}>✨</span>
-                                            <span>Intelligent Relation Suggestions</span>
+                                <div className="suggestions-panel">
+                                    {/* Panel Header */}
+                                    <div className="suggestions-panel-header">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <div className="suggestions-icon-wrap">
+                                                <span style={{ fontSize: 18 }}>✨</span>
+                                            </div>
+                                            <div>
+                                                <div style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 15 }}>Intelligent Relation Suggestions</div>
+                                                <div style={{ color: '#475569', fontSize: 12, marginTop: 2 }}>
+                                                    {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''} found
+                                                </div>
+                                            </div>
                                         </div>
-                                    }
-                                    extra={
                                         <Button
                                             type="text"
                                             size="small"
                                             onClick={() => setShowSuggestions(false)}
-                                            style={{ color: '#94a3b8' }}
+                                            style={{
+                                                color: '#475569', borderRadius: 8,
+                                                border: '1px solid rgba(255,255,255,0.08)',
+                                                background: 'rgba(255,255,255,0.03)',
+                                            }}
                                         >
-                                            Close
+                                            ✕ Close
                                         </Button>
-                                    }
-                                >
-                                    <Table
-                                        className="suggestions-table"
-                                        size="middle"
-                                        pagination={{ pageSize: 5 }}
-                                        dataSource={suggestions.map((s, i) => ({ ...s, key: i }))}
-                                        columns={[
-                                            {
-                                                title: 'Person A',
-                                                dataIndex: 'personAName',
-                                                key: 'personAName',
-                                                width: '25%',
-                                                render: (name) => (
-                                                    <div style={{
-                                                        padding: '8px 12px',
-                                                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                                        borderRadius: '6px',
-                                                        fontWeight: '500',
-                                                        color: '#38bdf8'
-                                                    }}>
-                                                        {name}
-                                                    </div>
-                                                )
-                                            },
-                                            {
-                                                title: 'Relation',
-                                                dataIndex: 'inferredRelation',
-                                                key: 'inferredRelation',
-                                                width: '20%',
-                                                render: (rel, record) => (
-                                                    <Tooltip title="Inferred relationship">
-                                                        <Tag
-                                                            color="#3b82f6"
-                                                            style={{
-                                                                padding: '6px 12px',
-                                                                fontSize: '13px',
-                                                                fontWeight: '600',
-                                                                borderRadius: '4px',
-                                                                cursor: 'pointer',
-                                                                border: '1px solid #60a5fa'
-                                                            }}
-                                                        >
-                                                            {rel}
-                                                        </Tag>
-                                                    </Tooltip>
-                                                )
-                                            },
-                                            {
-                                                title: 'Person B',
-                                                dataIndex: 'personBName',
-                                                key: 'personBName',
-                                                width: '25%',
-                                                render: (name) => (
-                                                    <div style={{
-                                                        padding: '8px 12px',
-                                                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                                        borderRadius: '6px',
-                                                        fontWeight: '500',
-                                                        color: '#10b981'
-                                                    }}>
-                                                        {name}
-                                                    </div>
-                                                )
-                                            },
-                                            {
-                                                title: 'Confidence',
-                                                dataIndex: 'message',
-                                                key: 'message',
-                                                width: '15%',
-                                                render: (msg) => {
-                                                    let confidence = 'Medium';
-                                                    let color = '#f59e0b';
-                                                    if (msg?.includes('high') || msg?.includes('strong')) {
-                                                        confidence = 'High';
-                                                        color = '#10b981';
-                                                    } else if (msg?.includes('low') || msg?.includes('weak')) {
-                                                        confidence = 'Low';
-                                                        color = '#ef4444';
-                                                    }
-                                                    return (
-                                                        <Badge
-                                                            color={color}
-                                                            text={<span style={{ color: color, fontWeight: '500' }}>{confidence}</span>}
-                                                        />
-                                                    );
-                                                }
-                                            },
-                                            {
-                                                title: 'Actions',
-                                                key: 'actions',
-                                                width: '15%',
-                                                render: (_, record, index) => {
-                                                    const isAccepted = acceptedSuggestions.includes(index);
-                                                    const isRejected = rejectedSuggestions.includes(index);
+                                    </div>
 
-                                                    return (
-                                                        <Space size="small">
-                                                            <Tooltip title="Accept suggestion">
-                                                                <Button
-                                                                    type={isAccepted ? 'primary' : 'text'}
-                                                                    size="small"
-                                                                    icon={<CheckCircleOutlined />}
+                                    {/* Suggestions List */}
+                                    <div className="suggestions-list">
+                                        {suggestions.length === 0 ? (
+                                            <div className="suggestions-empty">
+                                                <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+                                                <div>No inferred relations found</div>
+                                            </div>
+                                        ) : (
+                                            suggestions.map((s, index) => {
+                                                const isAccepted = acceptedSuggestions.includes(index);
+                                                const isRejected = rejectedSuggestions.includes(index);
+
+                                                const rel = (s.inferredRelation || '').toLowerCase();
+                                                let relColor = '#22d3ee', relBg = 'rgba(34,211,238,0.1)', relBorder = 'rgba(34,211,238,0.25)';
+                                                if (rel.includes('brother') || rel.includes('sister'))   { relColor = '#60a5fa'; relBg = 'rgba(96,165,250,0.1)';   relBorder = 'rgba(96,165,250,0.3)';   }
+                                                else if (rel.includes('father') || rel.includes('mother'))  { relColor = '#a78bfa'; relBg = 'rgba(167,139,250,0.1)';  relBorder = 'rgba(167,139,250,0.3)';  }
+                                                else if (rel.includes('son') || rel.includes('daughter'))   { relColor = '#34d399'; relBg = 'rgba(52,211,153,0.1)';   relBorder = 'rgba(52,211,153,0.3)';   }
+                                                else if (rel.includes('grand'))                              { relColor = '#fbbf24'; relBg = 'rgba(251,191,36,0.1)';   relBorder = 'rgba(251,191,36,0.3)';   }
+                                                else if (rel.includes('husband') || rel.includes('wife'))   { relColor = '#f472b6'; relBg = 'rgba(244,114,182,0.1)';  relBorder = 'rgba(244,114,182,0.3)';  }
+                                                else if (rel.includes('friend'))                             { relColor = '#f59e0b'; relBg = 'rgba(245,158,11,0.1)';   relBorder = 'rgba(245,158,11,0.3)';   }
+
+                                                const msg = s.message || '';
+                                                let confidence = 'Medium', confColor = '#f59e0b', confBg = 'rgba(245,158,11,0.1)';
+                                                if (msg.includes('high') || msg.includes('strong')) { confidence = 'High'; confColor = '#10b981'; confBg = 'rgba(16,185,129,0.1)'; }
+                                                else if (msg.includes('low') || msg.includes('weak')) { confidence = 'Low'; confColor = '#ef4444'; confBg = 'rgba(239,68,68,0.1)'; }
+
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        className={`suggestion-row ${isAccepted ? 'accepted' : ''} ${isRejected ? 'rejected' : ''}`}
+                                                    >
+                                                        {/* Person A */}
+                                                        <div className="suggestion-person">
+                                                            <div className="suggestion-avatar" style={{ background: 'rgba(56,189,248,0.15)', color: '#38bdf8' }}>
+                                                                {(s.personAName || '?').charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div className="suggestion-person-name" style={{ color: '#38bdf8' }}>
+                                                                {s.personAName}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Arrow + Relation chip */}
+                                                        <div className="suggestion-relation-col">
+                                                            <div className="suggestion-arrow">—</div>
+                                                            <span style={{
+                                                                color: relColor, background: relBg,
+                                                                border: `1px solid ${relBorder}`,
+                                                                borderRadius: 20, padding: '4px 12px',
+                                                                fontSize: 12, fontWeight: 700,
+                                                                whiteSpace: 'nowrap',
+                                                            }}>
+                                                                {(s.inferredRelation || 'Unknown').charAt(0).toUpperCase() + (s.inferredRelation || '').slice(1).toLowerCase()}
+                                                            </span>
+                                                            <div className="suggestion-arrow">—</div>
+                                                        </div>
+
+                                                        {/* Person B */}
+                                                        <div className="suggestion-person">
+                                                            <div className="suggestion-avatar" style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399' }}>
+                                                                {(s.personBName || '?').charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div className="suggestion-person-name" style={{ color: '#34d399' }}>
+                                                                {s.personBName}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Confidence */}
+                                                        <div style={{ textAlign: 'center', minWidth: 64 }}>
+                                                            <span style={{
+                                                                color: confColor, background: confBg,
+                                                                border: `1px solid ${confColor}40`,
+                                                                borderRadius: 20, padding: '3px 10px',
+                                                                fontSize: 11, fontWeight: 600,
+                                                            }}>
+                                                                {confidence}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Actions */}
+                                                        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                                            <Tooltip title={isAccepted ? 'Accepted' : 'Accept'}>
+                                                                <button
+                                                                    className={`sug-btn accept-btn ${isAccepted ? 'active' : ''}`}
                                                                     onClick={() => {
                                                                         if (isAccepted) {
                                                                             setAcceptedSuggestions(acceptedSuggestions.filter(i => i !== index));
@@ -616,16 +628,13 @@ function ContactsTable() {
                                                                             setRejectedSuggestions(rejectedSuggestions.filter(i => i !== index));
                                                                         }
                                                                     }}
-                                                                    style={{
-                                                                        color: isAccepted ? '#fff' : '#10b981'
-                                                                    }}
-                                                                />
+                                                                >
+                                                                    <CheckCircleOutlined />
+                                                                </button>
                                                             </Tooltip>
-                                                            <Tooltip title="Reject suggestion">
-                                                                <Button
-                                                                    type={isRejected ? 'primary' : 'text'}
-                                                                    size="small"
-                                                                    icon={<CloseCircleOutlined />}
+                                                            <Tooltip title={isRejected ? 'Rejected' : 'Reject'}>
+                                                                <button
+                                                                    className={`sug-btn reject-btn ${isRejected ? 'active' : ''}`}
                                                                     onClick={() => {
                                                                         if (isRejected) {
                                                                             setRejectedSuggestions(rejectedSuggestions.filter(i => i !== index));
@@ -634,18 +643,17 @@ function ContactsTable() {
                                                                             setAcceptedSuggestions(acceptedSuggestions.filter(i => i !== index));
                                                                         }
                                                                     }}
-                                                                    style={{
-                                                                        color: isRejected ? '#fff' : '#ef4444'
-                                                                    }}
-                                                                />
+                                                                >
+                                                                    <CloseCircleOutlined />
+                                                                </button>
                                                             </Tooltip>
-                                                        </Space>
-                                                    );
-                                                }
-                                            },
-                                        ]}
-                                    />
-                                </Card>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                </div>
                             )}
 
                             {/* Image Viewer Modal - WhatsApp/Instagram DP Style */}
