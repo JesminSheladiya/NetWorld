@@ -89,6 +89,14 @@ INSERT INTO relation_inference_rules
 ('PARENT','M','PARENT','F','Husband'),
 ('PARENT','F','PARENT','M','Wife'),
 
+('PARENT','M','PARENT','M','Brother'),
+('PARENT','M','PARENT','F','Brother'),
+('PARENT','F','PARENT','M','Sister'),
+('PARENT','F','PARENT','F','Sister'),
+('PARENT','N','PARENT','M','Brother'),
+('PARENT','N','PARENT','F','Sister'),
+('PARENT','N','PARENT','N','Brother'),
+
 -- PARENT + SIBLING → Parent of sibling
 ('PARENT','M','SIBLING','M','Father'),
 ('PARENT','M','SIBLING','F','Father'),
