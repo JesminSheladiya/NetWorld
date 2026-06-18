@@ -1,16 +1,15 @@
 import { useState, useEffect } from "react";
-import { Modal, Form, Input, Button, message, Avatar, Upload, Tabs, Spin, Select } from "antd";
+import { Modal, Form, Input, Button, message, Avatar, Upload, Tabs, Spin } from "antd";
 import {
     UserOutlined, PhoneOutlined, LockOutlined, EditOutlined,
-    CameraOutlined, SearchOutlined, CheckOutlined, CloseOutlined,
-    TeamOutlined, BellOutlined, BulbOutlined, LinkOutlined
+    CameraOutlined, CheckOutlined, CloseOutlined,
+    BellOutlined, LinkOutlined
 } from "@ant-design/icons";
 import ImgCrop from "antd-img-crop";
 import { updateProfile, getUser } from "../Services/authService";
 import { http } from "../Services/https";
 
 const BASE = process.env.REACT_APP_API_URL?.replace("/api/contacts", "/api") || "http://localhost:8080/api";
-const CONTACTS_URL = process.env.REACT_APP_API_URL || "http://localhost:8080/api/contacts";
 
 const COLORS = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
 const avatarBg = (name = "") => COLORS[(name.charCodeAt(0) || 0) % COLORS.length];
@@ -130,75 +129,26 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
 
     const [connections, setConnections] = useState([]);
     const [pending, setPending] = useState([]);
-    const [suggestions, setSuggestions] = useState([]);
-    const [relations, setRelations] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const [query, setQuery] = useState("");
-    const [results, setResults] = useState([]);
-    const [searching, setSearching] = useState(false);
-    const [relMap, setRelMap] = useState({});
-    const [sendingMap, setSendingMap] = useState({});
-    const [sentMap, setSentMap] = useState({});
-
     useEffect(() => {
-        if (open) { fetchAll(); fetchRelations(); }
-        else { setQuery(""); setResults([]); setSentMap({}); setRelMap({}); }
+        if (open) { fetchAll(); }
     }, [open]);
 
     const fetchAll = async () => {
         setLoading(true);
         try {
-            const [c, p, s] = await Promise.all([
+            const [c, p] = await Promise.all([
                 http.get(`${BASE}/user-relations/connections`),
                 http.get(`${BASE}/user-relations/pending`),
-                http.get(`${BASE}/user-relations/suggestions`),
             ]);
-            setConnections(c.data); setPending(p.data); setSuggestions(s.data);
+            setConnections(c.data); setPending(p.data);
         } catch { message.error("Failed to load!"); }
         finally { setLoading(false); }
     };
 
-    const fetchRelations = async () => {
-        try { const r = await http.get(`${CONTACTS_URL}/relations`); setRelations(r.data); }
-        catch { /* silent */ }
-    };
-
-    const search = async () => {
-        if (!query.trim()) return;
-        setSearching(true); setResults([]);
-        try {
-            const res = await http.get(`${BASE}/user-relations/search-users?query=${encodeURIComponent(query)}`);
-            setResults(res.data);
-        } catch { message.error("Search failed!"); }
-        finally { setSearching(false); }
-    };
-
-    const sendRequest = async (email) => {
-        if (!relMap[email]) { message.warning("Select a relation first!"); return; }
-        setSendingMap(p => ({ ...p, [email]: true }));
-        try {
-            await http.post(`${BASE}/user-relations/send`, { toEmail: email, relationId: relMap[email] });
-            setSentMap(p => ({ ...p, [email]: true }));
-            fetchAll();
-        } catch (e) { message.error(e.response?.data?.message || "Failed!"); }
-        finally { setSendingMap(p => ({ ...p, [email]: false })); }
-    };
-
     const acceptPending = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/accept`); fetchAll(); } catch { message.error("Failed!"); } };
     const declinePending = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/decline`); fetchAll(); } catch { message.error("Failed!"); } };
-
-    const acceptSuggestion = async (s) => {
-        try {
-            await http.post(`${BASE}/user-relations/suggestions/accept`, {
-                otherEmail: s.suggestedUserEmail, relationName: s.inferredRelation,
-            });
-            fetchAll();
-        } catch { message.error("Failed!"); }
-    };
-
-    const dismissSuggestion = (s) =>
-        setSuggestions(p => p.filter(x => x.suggestedUserEmail !== s.suggestedUserEmail));
 
     const save = async (values) => {
         setSaving(true);
@@ -293,7 +243,6 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                     <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
                         <StatBadge count={connections.length} label="Connected" color="#6366f1" />
                         <StatBadge count={pending.length} label="Requests" color="#f59e0b" />
-                        <StatBadge count={suggestions.length} label="Suggested" color="#8b5cf6" />
                     </div>
 
                     <Button
@@ -313,91 +262,6 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                     >
                         Edit Profile
                     </Button>
-                </div>
-            ),
-        },
-
-        /* ── FIND TAB ── */
-        {
-            key: "find",
-            label: (
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <SearchOutlined style={{ fontSize: 12 }} /> Find
-                </span>
-            ),
-            children: (
-                <div>
-                    <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-                        <Input
-                            placeholder="Search by name or email…"
-                            value={query}
-                            onChange={e => setQuery(e.target.value)}
-                            onPressEnter={search}
-                            style={{ ...inputStyle, flex: 1, height: 36 }}
-                            prefix={<SearchOutlined style={{ color: "#475569" }} />}
-                        />
-                        <Button
-                            size="small"
-                            loading={searching}
-                            onClick={search}
-                            style={{
-                                borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                                borderColor: "#6366f1", color: "#fff", height: 36, padding: "0 16px",
-                            }}
-                        >
-                            Search
-                        </Button>
-                    </div>
-
-                    {results.length === 0
-                        ? <EmptyState icon="🔍" text={query ? "No users found" : "Search for someone to connect"} />
-                        : results.map(u => (
-                            <PersonRow
-                                key={u.email}
-                                name={u.name}
-                                email={u.email}
-                                pic={u.profilePic}
-                                actions={sentMap[u.email]
-                                    ? <span style={{
-                                        color: "#10b981", fontSize: 11, fontWeight: 600,
-                                        background: "rgba(16,185,129,0.1)", borderRadius: 20,
-                                        padding: "3px 10px", border: "1px solid rgba(16,185,129,0.25)",
-                                    }}>✓ Sent</span>
-                                    : <>
-                                        <Select
-                                            size="small"
-                                            placeholder="Relation"
-                                            style={{ width: 100 }}
-                                            value={relMap[u.email] || undefined}
-                                            onChange={v => setRelMap(p => ({ ...p, [u.email]: v }))}
-                                            showSearch
-                                            optionFilterProp="children"
-                                            popupMatchSelectWidth={false}
-                                        >
-                                            {relations.map(r => (
-                                                <Select.Option key={r.id} value={r.id}>
-                                                    {r.relationName.charAt(0).toUpperCase() + r.relationName.slice(1).toLowerCase()}
-                                                </Select.Option>
-                                            ))}
-                                        </Select>
-                                        <button
-                                            onClick={() => sendRequest(u.email)}
-                                            disabled={sendingMap[u.email]}
-                                            style={{
-                                                background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                                                border: "none", borderRadius: 8, color: "#fff",
-                                                cursor: "pointer", width: 30, height: 30, fontSize: 14,
-                                                display: "flex", alignItems: "center", justifyContent: "center",
-                                                transition: "all 0.2s",
-                                            }}
-                                        >
-                                            →
-                                        </button>
-                                    </>
-                                }
-                            />
-                        ))
-                    }
                 </div>
             ),
         },
@@ -469,41 +333,6 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
             ),
         },
 
-        /* ── SUGGESTIONS TAB ── */
-        {
-            key: "suggested",
-            label: (
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <BulbOutlined style={{ fontSize: 12 }} />
-                    Suggested
-                    {suggestions.length > 0 && (
-                        <span style={{
-                            background: "#8b5cf6", color: "#fff", borderRadius: 20,
-                            padding: "0 6px", fontSize: 9, fontWeight: 700, lineHeight: "16px",
-                        }}>{suggestions.length}</span>
-                    )}
-                </span>
-            ),
-            children: (
-                <Spin spinning={loading}>
-                    {suggestions.length === 0 && !loading
-                        ? <EmptyState icon="✨" text="No suggestions yet" />
-                        : <>
-                            <SectionLabel>People You May Know ({suggestions.length})</SectionLabel>
-                            {suggestions.map((s, i) => (
-                                <PersonRow key={i} name={s.suggestedUserName} pic={s.suggestedUserProfilePic}
-                                    rel={s.inferredRelation} reason={s.reason}
-                                    actions={<>
-                                        <ActionBtn accept onClick={() => acceptSuggestion(s)} />
-                                        <ActionBtn onClick={() => dismissSuggestion(s)} />
-                                    </>}
-                                />
-                            ))}
-                        </>
-                    }
-                </Spin>
-            ),
-        },
     ];
 
     return (

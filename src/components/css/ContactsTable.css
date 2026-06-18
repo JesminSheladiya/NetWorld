@@ -195,7 +195,6 @@
   background: #0f172a;
 }
 
-
 /* ===========================
    Select Dropdown
 =========================== */
@@ -223,15 +222,15 @@
 }
 
 /* ===========================
-   Suggestions Panel (new design)
+   Suggestions Panel (Redesigned)
 =========================== */
 .suggestions-panel {
   margin-top: 24px;
-  background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(10,14,26,0.98) 100%);
+  background: linear-gradient(145deg, rgba(15,23,42,0.96) 0%, rgba(10,14,26,0.98) 100%);
   border: 1px solid rgba(99, 102, 241, 0.2);
-  border-radius: 14px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(99,102,241,0.08);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99,102,241,0.08);
 }
 
 .suggestions-panel-header {
@@ -240,86 +239,245 @@
   justify-content: space-between;
   padding: 18px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(99, 102, 241, 0.04);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.04));
+}
+
+.suggestions-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
 .suggestions-icon-wrap {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: rgba(99, 102, 241, 0.15);
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.12);
   border: 1px solid rgba(99, 102, 241, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.suggestions-list {
-  padding: 16px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* ===========================
+   Discovery Tabs
+=========================== */
+.discovery-tabs .ant-tabs-nav {
+  margin-bottom: 0 !important;
 }
 
-.suggestions-empty {
+.discovery-tabs .ant-tabs-nav::before {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.discovery-tabs .ant-tabs-tab {
+  padding: 10px 16px !important;
+  transition: all 0.2s ease !important;
+}
+
+.discovery-tabs .ant-tabs-tab:hover {
+  color: #a78bfa !important;
+}
+
+.discovery-tabs .ant-tabs-tab-active .discovery-tab-label {
+  color: #a78bfa !important;
+}
+
+.discovery-tabs .ant-tabs-ink-bar {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6) !important;
+  height: 2.5px !important;
+  border-radius: 2px !important;
+}
+
+.discovery-tab-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.2px;
+  transition: color 0.2s;
+}
+
+.discovery-tab-label:hover {
+  color: #94a3b8 !important;
+}
+
+/* ===========================
+   Discovery Common Components
+=========================== */
+.suggestions-list {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.discovery-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.discovery-section-title {
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.discovery-refresh-btn {
+  color: #818cf8 !important;
+  font-size: 11px !important;
+  border-radius: 6px !important;
+  padding: 2px 8px !important;
+  transition: all 0.2s !important;
+}
+
+.discovery-refresh-btn:hover {
+  background: rgba(99, 102, 241, 0.1) !important;
+  color: #a78bfa !important;
+}
+
+.discovery-empty {
   text-align: center;
   padding: 36px 0;
+}
+
+.discovery-empty-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+.discovery-empty-text {
   color: #475569;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.discovery-loading {
+  text-align: center;
+  padding: 28px;
+  color: #64748b;
   font-size: 13px;
 }
 
-/* Each suggestion row */
-.suggestion-row {
+.discovery-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 20px;
+  padding: 0 5px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 2px;
+}
+
+.discovery-badge-purple {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+.discovery-badge-indigo {
+  background: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
+}
+
+/* ===========================
+   Search Bar
+=========================== */
+.discovery-search-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.discovery-input {
+  flex: 1 !important;
+  height: 38px !important;
+  background: #0d1117 !important;
+  border: 1px solid rgba(99, 102, 241, 0.25) !important;
+  color: #f8fafc !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  transition: all 0.2s ease !important;
+}
+
+.discovery-input:hover {
+  border-color: rgba(99, 102, 241, 0.4) !important;
+}
+
+.discovery-input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+.discovery-search-btn {
+  height: 38px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  border: none !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 0 18px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25) !important;
+}
+
+.discovery-search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35) !important;
+}
+
+/* ===========================
+   Discovery Row (Find + Suggestions)
+=========================== */
+.discovery-row {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 12px 16px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.25s ease;
 }
 
-.suggestion-row:hover {
+.discovery-row:hover {
   background: rgba(99, 102, 241, 0.06);
   border-color: rgba(99, 102, 241, 0.2);
   transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
-.suggestion-row.accepted {
-  background: rgba(16, 185, 129, 0.05);
-  border-color: rgba(16, 185, 129, 0.2);
-}
-
-.suggestion-row.rejected {
-  background: rgba(239, 68, 68, 0.04);
-  border-color: rgba(239, 68, 68, 0.15);
-  opacity: 0.6;
-}
-
-/* Person card in suggestion row */
-.suggestion-person {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-}
-
-.suggestion-avatar {
-  width: 38px;
-  height: 38px;
+.discovery-avatar {
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
+  color: #fff;
   flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.suggestion-person-name {
+.discovery-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.discovery-row-name {
+  color: #e2e8f0;
   font-size: 13px;
   font-weight: 600;
   overflow: hidden;
@@ -327,68 +485,232 @@
   white-space: nowrap;
 }
 
-/* Relation column (chip + arrows) */
-.suggestion-relation-col {
+.discovery-row-email {
+  color: #64748b;
+  font-size: 11px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.discovery-row-actions {
   display: flex;
-  align-items: center;
   gap: 6px;
+  align-items: center;
   flex-shrink: 0;
 }
 
-.suggestion-arrow {
-  color: rgba(255, 255, 255, 0.15);
-  font-size: 14px;
-  letter-spacing: -2px;
+.discovery-sent-badge {
+  color: #10b981;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 20px;
+  padding: 3px 10px;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
 }
 
-/* Action buttons in suggestions */
-.sug-btn {
-  width: 32px;
-  height: 32px;
+.discovery-relation-select {
+  width: 95px !important;
+}
+
+.discovery-relation-select .ant-select-selector {
+  background: rgba(15, 23, 42, 0.8) !important;
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  border-radius: 8px !important;
+  height: 30px !important;
+  font-size: 11px !important;
+  color: #e2e8f0 !important;
+}
+
+.discovery-rel-chip {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid;
+  letter-spacing: 0.2px;
+  flex-shrink: 0;
+}
+
+.discovery-send-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+}
+
+.discovery-send-btn:hover:not(:disabled) {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.discovery-send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===========================
+   Action Buttons (Find + Suggestions)
+=========================== */
+.discovery-action-btn {
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
   transition: all 0.2s ease;
 }
 
-.accept-btn {
+.discovery-action-accept {
   background: rgba(16, 185, 129, 0.1);
-  color: #10b981;
+  color: #6ee7b7;
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
-.accept-btn:hover,
-.accept-btn.active {
+.discovery-action-accept:hover {
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  transform: scale(1.08);
+}
+
+.discovery-action-accept.active {
   background: rgba(16, 185, 129, 0.25);
+  color: #10b981;
   border-color: #10b981;
-  transform: scale(1.08);
 }
 
-.accept-btn.active {
-  background: #10b981;
-  color: #fff;
-}
-
-.reject-btn {
+.discovery-action-dismiss {
   background: rgba(239, 68, 68, 0.08);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.15);
 }
 
-.reject-btn:hover,
-.reject-btn.active {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: #ef4444;
+.discovery-action-dismiss:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
   transform: scale(1.08);
 }
 
-.reject-btn.active {
-  background: #ef4444;
+.discovery-action-dismiss.active {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+/* ===========================
+   Inferred Relation Rows
+=========================== */
+.discovery-inferred-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.discovery-inferred-row:hover {
+  background: rgba(99, 102, 241, 0.05);
+  border-color: rgba(99, 102, 241, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.discovery-inferred-row.accepted {
+  background: rgba(16, 185, 129, 0.06);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.discovery-inferred-row.rejected {
+  background: rgba(239, 68, 68, 0.04);
+  border-color: rgba(239, 68, 68, 0.12);
+  opacity: 0.5;
+}
+
+.discovery-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.discovery-person-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
   color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.discovery-person-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #e2e8f0;
+}
+
+.discovery-relation-chain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.discovery-relation-line {
+  width: 18px;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.15), rgba(255,255,255,0.08));
+  border-radius: 1px;
+}
+
+.discovery-relation-chip {
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.discovery-confidence-wrap {
+  text-align: center;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.discovery-confidence-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
 /* ===========================
