@@ -73,13 +73,13 @@ function App() {
                         <Avatar
                           size={42}
                           src={profileAvatar}
-                          style={{ backgroundColor: '#1f2937', color: '#7dd3fc' }}
+                          style={{ backgroundColor: '#1f2937', color: '#7dd3fc', borderRadius: '50%' }}
                         >
                           {!profileAvatar && initials}
                         </Avatar>
-                        <div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff' }}>{fullName}</div>
-                          <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 2 }}>{email}</div>
+                        <div style={{ overflow: 'hidden', minWidth: 0 }}>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fullName}</div>
+                          <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</div>
                         </div>
                       </div>
                     </div>
@@ -155,7 +155,7 @@ function App() {
                   <Avatar
                     size={40}
                     src={profileAvatar}
-                    style={{ backgroundColor: '#1f2937', color: '#ffffff', fontWeight: 700 }}
+                    style={{ backgroundColor: '#1f2937', color: '#ffffff', fontWeight: 700, borderRadius: '50%' }}
                   >
                     {!profileAvatar && initials}
                   </Avatar>
