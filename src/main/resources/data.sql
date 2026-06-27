@@ -21,9 +21,11 @@ INSERT INTO relations (relation_name, generation_level, gender, relation_categor
 ('Grandmother',      2,  'F', 'GRANDPARENT'),
 ('Grandson',        -2,  'M', 'GRANDCHILD'),
 ('Granddaughter',   -2,  'F', 'GRANDCHILD'),
-('Uncle',           99,  'M', 'OTHER'),
-('Aunt',            99,  'F', 'OTHER'),
-('Cousin',          98,  'N', 'OTHER'),
+('Uncle',           1,   'M', 'OTHER'),
+('Aunt',            1,   'F', 'OTHER'),
+('Cousin',          0,   'N', 'OTHER'),
+('Cousin Brother',  0,   'M', 'OTHER'),
+('Cousin Sister',   0,   'F', 'OTHER'),
 ('Husband',          0,  'M', 'SPOUSE'),
 ('Wife',             0,  'F', 'SPOUSE'),
 ('Nephew',          -1,  'M', 'OTHER'),
@@ -34,7 +36,7 @@ INSERT INTO relations (relation_name, generation_level, gender, relation_categor
 ('Daughter-in-law', -1,  'F', 'INLAW'),
 ('Brother-in-law',   0,  'M', 'INLAW'),
 ('Sister-in-law',    0,  'F', 'INLAW')
-ON CONFLICT (relation_name) DO NOTHING;
+ON CONFLICT (relation_name) DO UPDATE SET generation_level = EXCLUDED.generation_level, gender = EXCLUDED.gender, relation_category = EXCLUDED.relation_category;
 
 
 UPDATE relations SET relation_category = 'PARENT'
@@ -58,7 +60,7 @@ UPDATE relations SET relation_category = 'PIBLING'
 UPDATE relations SET relation_category = 'NIBLING'
     WHERE LOWER(relation_name) IN ('nephew','niece') AND (relation_category = 'OTHER' OR relation_category IS NULL);
 UPDATE relations SET relation_category = 'COUSIN'
-    WHERE LOWER(relation_name) = 'cousin' AND (relation_category = 'OTHER' OR relation_category IS NULL);
+    WHERE LOWER(relation_name) IN ('cousin','cousin brother','cousin sister') AND (relation_category = 'OTHER' OR relation_category IS NULL);
 
 -- =============================================
 -- SAMPLE CONTACTS
@@ -90,8 +92,6 @@ INSERT INTO relation_inference_rules
 ('PARENT','F','PARENT','M','Wife'),
 
 ('PARENT','M','PARENT','M','Brother'),
-('PARENT','M','PARENT','F','Brother'),
-('PARENT','F','PARENT','M','Sister'),
 ('PARENT','F','PARENT','F','Sister'),
 ('PARENT','N','PARENT','M','Brother'),
 ('PARENT','N','PARENT','F','Sister'),
@@ -221,6 +221,172 @@ INSERT INTO relation_inference_rules
 ('SIBLING','M','INLAW','M','Brother-in-law'),
 ('SIBLING','M','INLAW','F','Brother-in-law'),
 ('SIBLING','F','INLAW','M','Sister-in-law'),
-('SIBLING','F','INLAW','F','Sister-in-law')
+('SIBLING','F','INLAW','F','Sister-in-law'),
 
-ON CONFLICT (category_a, gender_a, category_b, gender_b) DO NOTHING;
+-- =============================================
+-- PIBLING (Parent's Sibling = Uncle/Aunt) Rules
+-- =============================================
+
+-- PIBLING + SIBLING → same PIBLING (my uncle is also my sibling's uncle)
+('PIBLING','M','SIBLING','M','Uncle'),
+('PIBLING','M','SIBLING','F','Uncle'),
+('PIBLING','F','SIBLING','M','Aunt'),
+('PIBLING','F','SIBLING','F','Aunt'),
+
+-- SIBLING + PIBLING → NIBLING (sibling of uncle's sibling = nephew/niece)
+('SIBLING','M','PIBLING','M','Nephew'),
+('SIBLING','M','PIBLING','F','Nephew'),
+('SIBLING','F','PIBLING','M','Niece'),
+('SIBLING','F','PIBLING','F','Niece'),
+
+-- PIBLING + CHILD → COUSIN (my uncle's child = cousin of my child)
+('PIBLING','M','CHILD','M','Cousin'),
+('PIBLING','M','CHILD','F','Cousin'),
+('PIBLING','F','CHILD','M','Cousin'),
+('PIBLING','F','CHILD','F','Cousin'),
+
+-- CHILD + PIBLING → NIBLING (my child is nephew/niece of my uncle)
+('CHILD','M','PIBLING','M','Nephew'),
+('CHILD','M','PIBLING','F','Nephew'),
+('CHILD','F','PIBLING','M','Niece'),
+('CHILD','F','PIBLING','F','Niece'),
+
+-- =============================================
+-- NIBLING (Nephew/Niece) Rules
+-- =============================================
+
+-- NIBLING + SIBLING → CHILD (my nephew is my sibling's child)
+('NIBLING','M','SIBLING','M','Son'),
+('NIBLING','M','SIBLING','F','Son'),
+('NIBLING','F','SIBLING','M','Daughter'),
+('NIBLING','F','SIBLING','F','Daughter'),
+
+-- SIBLING + NIBLING → PIBLING (my sibling's child's uncle/aunt = me)
+('SIBLING','M','NIBLING','M','Uncle'),
+('SIBLING','M','NIBLING','F','Uncle'),
+('SIBLING','F','NIBLING','M','Aunt'),
+('SIBLING','F','NIBLING','F','Aunt'),
+
+-- NIBLING + CHILD → COUSIN (my nephew + my child = cousins)
+('NIBLING','M','CHILD','M','Cousin'),
+('NIBLING','M','CHILD','F','Cousin'),
+('NIBLING','F','CHILD','M','Cousin'),
+('NIBLING','F','CHILD','F','Cousin'),
+
+-- CHILD + NIBLING → COUSIN (same as above, reversed)
+('CHILD','M','NIBLING','M','Cousin'),
+('CHILD','M','NIBLING','F','Cousin'),
+('CHILD','F','NIBLING','M','Cousin'),
+('CHILD','F','NIBLING','F','Cousin'),
+
+-- =============================================
+-- COUSIN Rules
+-- =============================================
+
+-- COUSIN + SIBLING → COUSIN (my cousin is also my sibling's cousin)
+('COUSIN','N','SIBLING','M','Cousin'),
+('COUSIN','N','SIBLING','F','Cousin'),
+('SIBLING','M','COUSIN','N','Cousin'),
+('SIBLING','F','COUSIN','N','Cousin'),
+
+-- COUSIN + SIBLING (gender-specific cousin types)
+('COUSIN','M','SIBLING','M','Cousin'),
+('COUSIN','M','SIBLING','F','Cousin'),
+('COUSIN','F','SIBLING','M','Cousin'),
+('COUSIN','F','SIBLING','F','Cousin'),
+('SIBLING','M','COUSIN','M','Cousin'),
+('SIBLING','M','COUSIN','F','Cousin'),
+('SIBLING','F','COUSIN','M','Cousin'),
+('SIBLING','F','COUSIN','F','Cousin'),
+
+-- COUSIN + CHILD → COUSIN
+('COUSIN','N','CHILD','M','Cousin'),
+('COUSIN','N','CHILD','F','Cousin'),
+('CHILD','M','COUSIN','N','Cousin'),
+('CHILD','F','COUSIN','N','Cousin'),
+('COUSIN','M','CHILD','M','Cousin'),
+('COUSIN','M','CHILD','F','Cousin'),
+('COUSIN','F','CHILD','M','Cousin'),
+('COUSIN','F','CHILD','F','Cousin'),
+('CHILD','M','COUSIN','M','Cousin'),
+('CHILD','M','COUSIN','F','Cousin'),
+('CHILD','F','COUSIN','M','Cousin'),
+('CHILD','F','COUSIN','F','Cousin'),
+
+-- Cousin Brother + Cousin Sister → cross-generation fallback: uncle/nephew
+('COUSIN','M','COUSIN','F','Uncle'),
+('COUSIN','F','COUSIN','M','Niece'),
+
+-- =============================================
+-- PIBLING + PIBLING / NIBLING + NIBLING cross
+-- =============================================
+
+-- PIBLING + PIBLING → SIBLING (two uncles/aunts are siblings)
+('PIBLING','M','PIBLING','M','Brother'),
+('PIBLING','M','PIBLING','F','Brother'),
+('PIBLING','F','PIBLING','M','Sister'),
+('PIBLING','F','PIBLING','F','Sister'),
+
+-- NIBLING + NIBLING → SIBLING (two nephews/nieces are siblings)
+('NIBLING','M','NIBLING','M','Brother'),
+('NIBLING','M','NIBLING','F','Brother'),
+('NIBLING','F','NIBLING','M','Sister'),
+('NIBLING','F','NIBLING','F','Sister'),
+
+-- PIBLING + NIBLING → COUSIN (uncle + nephew → cousin? Actually they can't be directly inferred)
+('PIBLING','M','NIBLING','M','Cousin'),
+('PIBLING','M','NIBLING','F','Cousin'),
+('PIBLING','F','NIBLING','M','Cousin'),
+('PIBLING','F','NIBLING','F','Cousin'),
+('NIBLING','M','PIBLING','M','Cousin'),
+('NIBLING','M','PIBLING','F','Cousin'),
+('NIBLING','F','PIBLING','M','Cousin'),
+('NIBLING','F','PIBLING','F','Cousin'),
+
+-- COUSIN + COUSIN → SIBLING (both cousins of user, siblings to each other? No, they could be from different sides)
+-- Fallback: cousins of same user are siblings to each other if from same parent's sibling
+('COUSIN','N','COUSIN','N','Brother'),
+('COUSIN','M','COUSIN','M','Brother'),
+('COUSIN','F','COUSIN','F','Sister'),
+
+-- COUSIN + PIBLING → NIBLING (my cousin to my uncle = nephew/niece of uncle)
+('COUSIN','N','PIBLING','M','Nephew'),
+('COUSIN','N','PIBLING','F','Niece'),
+('COUSIN','M','PIBLING','M','Nephew'),
+('COUSIN','M','PIBLING','F','Niece'),
+('COUSIN','F','PIBLING','M','Nephew'),
+('COUSIN','F','PIBLING','F','Niece'),
+('PIBLING','M','COUSIN','N','Nephew'),
+('PIBLING','F','COUSIN','N','Niece'),
+('PIBLING','M','COUSIN','M','Nephew'),
+('PIBLING','M','COUSIN','F','Niece'),
+('PIBLING','F','COUSIN','M','Nephew'),
+('PIBLING','F','COUSIN','F','Niece'),
+
+-- COUSIN + NIBLING → COUSIN (my cousin + my nephew = also cousins)
+('COUSIN','N','NIBLING','M','Cousin'),
+('COUSIN','N','NIBLING','F','Cousin'),
+('COUSIN','M','NIBLING','M','Cousin'),
+('COUSIN','M','NIBLING','F','Cousin'),
+('COUSIN','F','NIBLING','M','Cousin'),
+('COUSIN','F','NIBLING','F','Cousin'),
+('NIBLING','M','COUSIN','N','Cousin'),
+('NIBLING','F','COUSIN','N','Cousin'),
+('NIBLING','M','COUSIN','M','Cousin'),
+('NIBLING','M','COUSIN','F','Cousin'),
+('NIBLING','F','COUSIN','M','Cousin'),
+('NIBLING','F','COUSIN','F','Cousin'),
+
+-- =============================================
+-- PARENT + PIBLING → SIBLING (my parent + my uncle = siblings)
+-- =============================================
+('PARENT','M','PIBLING','M','Brother'),
+('PARENT','M','PIBLING','F','Brother'),
+('PARENT','F','PIBLING','M','Sister'),
+('PARENT','F','PIBLING','F','Sister'),
+('PIBLING','M','PARENT','M','Brother'),
+('PIBLING','M','PARENT','F','Brother'),
+('PIBLING','F','PARENT','M','Sister'),
+('PIBLING','F','PARENT','F','Sister')
+
+ON CONFLICT (category_a, gender_a, category_b, gender_b) DO UPDATE SET inferred_relation_name = EXCLUDED.inferred_relation_name;

@@ -77,6 +77,12 @@ public class RelationService {
                     inferredName = rulesMap.get(catA + "|" + genderA + "|" + catB + "|N");
                 if (inferredName == null)
                     inferredName = rulesMap.get(catA + "|N|" + catB + "|" + genderB);
+
+                // ── 5. Generation-level fallback when no rule matches ──
+                if (inferredName == null) {
+                    inferredName = inferByGenerationLevel(relA, relB);
+                }
+
                 if (inferredName == null) continue;
 
                 // Verify the inferred relation name exists in relations master
@@ -99,5 +105,70 @@ public class RelationService {
 
         System.out.println("=== TOTAL SUGGESTIONS FOR USER [" + user.getUsername() + "]: " + suggestions.size());
         return suggestions;
+    }
+
+    /**
+     * Fallback inference using generation levels when no exact rule matches.
+     * Compares generation levels of the two relations to determine
+     * whether A is parent-like, child-like, or sibling-like to B.
+     */
+    private String inferByGenerationLevel(Relation relA, Relation relB) {
+        int genA = relA.getGenerationLevel() != null ? relA.getGenerationLevel() : 0;
+        int genB = relB.getGenerationLevel() != null ? relB.getGenerationLevel() : 0;
+        int diff = genA - genB;
+        String genderA = relA.getGender() != null ? relA.getGender() : "N";
+
+        // Only handle blood relations with same blood status for consistency
+        boolean isBloodA = relA.getIsBlood() != null && relA.getIsBlood();
+        boolean isBloodB = relB.getIsBlood() != null && relB.getIsBlood();
+
+        // Normalize: if both are blood, treat as blood relations
+        boolean bothBlood = isBloodA && isBloodB;
+        boolean neitherBlood = !isBloodA && !isBloodB;
+
+        if (diff == 0) {
+            // Same generation level → sibling-like
+            if (bothBlood) {
+                return genderA.equals("M") ? "Brother" : "Sister";
+            } else if (neitherBlood) {
+                // In-laws: brother-in-law / sister-in-law
+                return genderA.equals("M") ? "Brother-in-law" : "Sister-in-law";
+            } else {
+                // Mixed: treat as in-law
+                return genderA.equals("M") ? "Brother-in-law" : "Sister-in-law";
+            }
+        } else if (diff > 0) {
+            // A is older generation than B → parent-like
+            if (diff == 1) {
+                // Direct parent-child
+                if (bothBlood) {
+                    return genderA.equals("M") ? "Father" : "Mother";
+                } else {
+                    return genderA.equals("M") ? "Father-in-law" : "Mother-in-law";
+                }
+            } else {
+                // Grandparent / great-grandparent level
+                if (bothBlood) {
+                    return genderA.equals("M") ? "Grandfather" : "Grandmother";
+                } else {
+                    return genderA.equals("M") ? "Grandfather" : "Grandmother";
+                }
+            }
+        } else {
+            // A is younger generation than B → child-like
+            if (diff == -1) {
+                if (bothBlood) {
+                    return genderA.equals("M") ? "Son" : "Daughter";
+                } else {
+                    return genderA.equals("M") ? "Son-in-law" : "Daughter-in-law";
+                }
+            } else {
+                if (bothBlood) {
+                    return genderA.equals("M") ? "Grandson" : "Granddaughter";
+                } else {
+                    return genderA.equals("M") ? "Grandson" : "Granddaughter";
+                }
+            }
+        }
     }
 }
