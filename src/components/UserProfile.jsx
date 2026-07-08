@@ -3,7 +3,7 @@ import { Modal, Form, Input, Button, message, Avatar, Upload, Tabs, Spin } from 
 import {
     UserOutlined, PhoneOutlined, LockOutlined, EditOutlined,
     CameraOutlined, CheckOutlined, CloseOutlined,
-    BellOutlined, LinkOutlined
+    BellOutlined
 } from "@ant-design/icons";
 import ImgCrop from "antd-img-crop";
 import { updateProfile, getUser } from "../Services/authService";
@@ -28,7 +28,7 @@ const RelChip = ({ rel }) => {
     if (!rel) return null;
     const s = relStyle(rel);
     return (
-        <span style={{
+        <span className="up-rel-chip" style={{
             color: s.color, background: s.bg, border: `1px solid ${s.border}`,
             borderRadius: 20, padding: "3px 10px", fontSize: 11, fontWeight: 600,
             whiteSpace: "nowrap", letterSpacing: 0.3,
@@ -40,6 +40,7 @@ const RelChip = ({ rel }) => {
 
 const UserAvatar = ({ name, pic, size = 36 }) => (
     <Avatar
+        className="up-user-avatar"
         size={size}
         src={pic || null}
         style={{
@@ -54,7 +55,7 @@ const UserAvatar = ({ name, pic, size = 36 }) => (
 );
 
 const PersonRow = ({ name, email, pic, rel, reason, actions }) => (
-    <div style={{
+    <div className="up-person-row" style={{
         display: "flex", alignItems: "center", gap: 12,
         padding: "10px 14px",
         borderRadius: 10,
@@ -67,22 +68,22 @@ const PersonRow = ({ name, email, pic, rel, reason, actions }) => (
         onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
     >
         <UserAvatar name={name} pic={pic} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div className="up-person-info" style={{ flex: 1, minWidth: 0 }}>
+            <div className="up-person-name" style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {name}
             </div>
             {reason
-                ? <div style={{ color: "#64748b", fontSize: 11, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{reason}</div>
-                : email && <div style={{ color: "#64748b", fontSize: 11, marginTop: 1 }}>{email}</div>
+                ? <div className="up-person-reason" style={{ color: "#64748b", fontSize: 11, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{reason}</div>
+                : email && <div className="up-person-email" style={{ color: "#64748b", fontSize: 11, marginTop: 1 }}>{email}</div>
             }
         </div>
         {rel && <RelChip rel={rel} />}
-        {actions && <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>{actions}</div>}
+        {actions && <div className="up-person-actions" style={{ display: "flex", gap: 6, flexShrink: 0 }}>{actions}</div>}
     </div>
 );
 
 const ActionBtn = ({ onClick, accept }) => (
-    <button onClick={onClick} style={{
+    <button className={`up-action-btn ${accept ? "up-action-btn-accept" : "up-action-btn-decline"}`} onClick={onClick} style={{
         width: 28, height: 28, borderRadius: 8, cursor: "pointer", fontSize: 13, border: "none",
         background: accept ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.12)",
         color: accept ? "#10b981" : "#ef4444",
@@ -97,14 +98,14 @@ const ActionBtn = ({ onClick, accept }) => (
 );
 
 const EmptyState = ({ icon, text }) => (
-    <div style={{ textAlign: "center", padding: "32px 0", color: "#334155" }}>
-        <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.4 }}>{icon}</div>
-        <div style={{ fontSize: 12, color: "#475569" }}>{text}</div>
+    <div className="up-empty-state" style={{ textAlign: "center", padding: "32px 0", color: "#334155" }}>
+        <div className="up-empty-icon" style={{ fontSize: 28, marginBottom: 8, opacity: 0.4 }}>{icon}</div>
+        <div className="up-empty-text" style={{ fontSize: 12, color: "#475569" }}>{text}</div>
     </div>
 );
 
 const SectionLabel = ({ children }) => (
-    <div style={{
+    <div className="up-section-label" style={{
         fontSize: 10, fontWeight: 700, color: "#334155",
         letterSpacing: 1.2, textTransform: "uppercase",
         marginBottom: 8, marginTop: 4,
@@ -127,28 +128,24 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
     const [preview, setPreview] = useState(user.profilePicture || null);
     const [newImg, setNewImg] = useState(null);
 
-    const [connections, setConnections] = useState([]);
     const [pending, setPending] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (open) { fetchAll(); }
+        if (open) { fetchPending(); }
     }, [open]);
 
-    const fetchAll = async () => {
+    const fetchPending = async () => {
         setLoading(true);
         try {
-            const [c, p] = await Promise.all([
-                http.get(`${BASE}/user-relations/connections`),
-                http.get(`${BASE}/user-relations/pending`),
-            ]);
-            setConnections(c.data); setPending(p.data);
+            const p = await http.get(`${BASE}/user-relations/pending`);
+            setPending(p.data);
         } catch { message.error("Failed to load!"); }
         finally { setLoading(false); }
     };
 
-    const acceptPending = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/accept`); fetchAll(); } catch { message.error("Failed!"); } };
-    const declinePending = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/decline`); fetchAll(); } catch { message.error("Failed!"); } };
+    const acceptPending = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/accept`); fetchPending(); } catch { message.error("Failed!"); } };
+    const declinePending = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/decline`); fetchPending(); } catch { message.error("Failed!"); } };
 
     const save = async (values) => {
         setSaving(true);
@@ -165,15 +162,15 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
 
     /* ── Stat badge ── */
     const StatBadge = ({ count, label, color }) => (
-        <div style={{
+        <div className="up-stat-badge" style={{
             display: "flex", flexDirection: "column", alignItems: "center",
             padding: "8px 14px", borderRadius: 10,
             background: "rgba(255,255,255,0.03)",
             border: "1px solid rgba(255,255,255,0.06)",
             minWidth: 64,
         }}>
-            <span style={{ fontSize: 18, fontWeight: 800, color }}>{count}</span>
-            <span style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>{label}</span>
+            <span className="up-stat-count" style={{ fontSize: 18, fontWeight: 800, color }}>{count}</span>
+            <span className="up-stat-label" style={{ fontSize: 10, color: "#475569", marginTop: 1 }}>{label}</span>
         </div>
     );
 
@@ -182,14 +179,14 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
         {
             key: "profile",
             label: (
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="up-tab-label-profile" style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <UserOutlined style={{ fontSize: 12 }} /> Profile
                 </span>
             ),
             children: (
-                <div>
+                <div className="up-profile-tab">
                     {/* Avatar + name block */}
-                    <div style={{
+                    <div className="up-profile-header" style={{
                         display: "flex", alignItems: "center", gap: 14,
                         padding: "12px 14px",
                         background: "linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05))",
@@ -197,20 +194,20 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                         border: "1px solid rgba(99,102,241,0.12)",
                         marginBottom: 14,
                     }}>
-                        <div style={{ position: "relative" }}>
+                        <div className="up-avatar-wrapper" style={{ position: "relative" }}>
                             <UserAvatar name={user.fullName || user.username} pic={user.profilePicture} size={52} />
-                            <div style={{
+                            <div className="up-online-dot" style={{
                                 position: "absolute", bottom: 0, right: -2,
                                 width: 14, height: 14, borderRadius: "50%",
                                 background: "#10b981", border: "2px solid #0a0e1a",
                             }} />
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>
+                        <div className="up-profile-info" style={{ flex: 1, minWidth: 0 }}>
+                            <div className="up-profile-fullname" style={{ color: "#f1f5f9", fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>
                                 {user.fullName || user.username}
                             </div>
-                            <div style={{ color: "#64748b", fontSize: 11, marginTop: 3 }}>{user.email}</div>
-                            <div style={{
+                            <div className="up-profile-email" style={{ color: "#64748b", fontSize: 11, marginTop: 3 }}>{user.email}</div>
+                            <div className="up-profile-role" style={{
                                 display: "inline-block", marginTop: 5,
                                 background: "rgba(99,102,241,0.15)", color: "#818cf8",
                                 borderRadius: 20, padding: "1px 8px", fontSize: 10, fontWeight: 600,
@@ -221,31 +218,31 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                     </div>
 
                     {/* Info rows */}
-                    <div style={{ marginBottom: 14 }}>
+                    <div className="up-info-rows" style={{ marginBottom: 14 }}>
                         {[
                             ["Phone", user.phone || "—", "📞"],
                             ["Username", user.username, "👤"],
                         ].map(([l, v, icon]) => (
-                            <div key={l} style={{
+                            <div className="up-info-row" key={l} style={{
                                 display: "flex", justifyContent: "space-between", alignItems: "center",
                                 padding: "7px 0", borderBottom: "1px solid rgba(255,255,255,0.04)",
                                 fontSize: 12,
                             }}>
-                                <span style={{ color: "#475569", display: "flex", alignItems: "center", gap: 6 }}>
+                                <span className="up-info-label" style={{ color: "#475569", display: "flex", alignItems: "center", gap: 6 }}>
                                     <span style={{ fontSize: 11 }}>{icon}</span>{l}
                                 </span>
-                                <span style={{ color: "#94a3b8", fontWeight: 500 }}>{v}</span>
+                                <span className="up-info-value" style={{ color: "#94a3b8", fontWeight: 500 }}>{v}</span>
                             </div>
                         ))}
                     </div>
 
                     {/* Stats */}
-                    <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                        <StatBadge count={connections.length} label="Connected" color="#6366f1" />
+                    <div className="up-stats-row" style={{ display: "flex", gap: 8, marginBottom: 14 }}>
                         <StatBadge count={pending.length} label="Requests" color="#f59e0b" />
                     </div>
 
                     <Button
+                        className="up-btn-edit-profile"
                         size="small"
                         icon={<EditOutlined />}
                         style={{
@@ -266,46 +263,15 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
             ),
         },
 
-        /* ── CONNECTIONS TAB ── */
-        {
-            key: "connected",
-            label: (
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <LinkOutlined style={{ fontSize: 12 }} />
-                    Connected
-                    {connections.length > 0 && (
-                        <span style={{
-                            background: "#6366f1", color: "#fff", borderRadius: 20,
-                            padding: "0 6px", fontSize: 9, fontWeight: 700, lineHeight: "16px",
-                        }}>{connections.length}</span>
-                    )}
-                </span>
-            ),
-            children: (
-                <Spin spinning={loading}>
-                    {connections.length === 0 && !loading
-                        ? <EmptyState icon="🔗" text="No connections yet — find people to connect with!" />
-                        : <>
-                            <SectionLabel>Your Network ({connections.length})</SectionLabel>
-                            {connections.map((c, i) => (
-                                <PersonRow key={i} name={c.suggestedUserName} email={c.suggestedUserEmail}
-                                    pic={c.suggestedUserProfilePic} rel={c.inferredRelation} />
-                            ))}
-                        </>
-                    }
-                </Spin>
-            ),
-        },
-
         /* ── REQUESTS TAB ── */
         {
             key: "requests",
             label: (
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="up-tab-label-requests" style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <BellOutlined style={{ fontSize: 12 }} />
                     Requests
                     {pending.length > 0 && (
-                        <span style={{
+                        <span className="up-tab-badge" style={{
                             background: "#f59e0b", color: "#000", borderRadius: 20,
                             padding: "0 6px", fontSize: 9, fontWeight: 700, lineHeight: "16px",
                         }}>{pending.length}</span>
@@ -313,7 +279,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                 </span>
             ),
             children: (
-                <Spin spinning={loading}>
+                <Spin className="up-spin" spinning={loading}>
                     {pending.length === 0 && !loading
                         ? <EmptyState icon="🔔" text="No pending requests" />
                         : <>
@@ -337,6 +303,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
 
     return (
         <Modal
+            className="up-modal"
             open={open}
             onCancel={() => { setEditing(false); onClose(); }}
             footer={null}
@@ -366,6 +333,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
         >
             {!editing && (
                 <Tabs
+                    className="up-tabs"
                     items={tabItems}
                     size="small"
                     tabBarStyle={{
@@ -377,9 +345,9 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
             )}
 
             {editing && (
-                <Form form={form} layout="vertical" onFinish={save}>
+                <Form className="up-edit-form" form={form} layout="vertical" onFinish={save}>
                     {/* Avatar Upload */}
-                    <div style={{ textAlign: "center", marginBottom: 18 }}>
+                    <div className="up-edit-avatar-section" style={{ textAlign: "center", marginBottom: 18 }}>
                         <ImgCrop rotationSlider aspect={1}>
                             <Upload
                                 showUploadList={false}
@@ -392,8 +360,9 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                                     r.readAsDataURL(file); return false;
                                 }}
                             >
-                                <div style={{ cursor: "pointer", position: "relative", display: "inline-block" }}>
+                                <div className="up-edit-avatar-wrapper" style={{ cursor: "pointer", position: "relative", display: "inline-block" }}>
                                     <Avatar
+                                        className="up-edit-avatar"
                                         size={70}
                                         src={preview || null}
                                         icon={!preview && <UserOutlined />}
@@ -403,7 +372,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                                             border: "3px solid rgba(99,102,241,0.3)",
                                         }}
                                     />
-                                    <div style={{
+                                    <div className="up-camera-icon" style={{
                                         position: "absolute", bottom: 0, right: 0,
                                         background: "linear-gradient(135deg,#6366f1,#8b5cf6)",
                                         borderRadius: "50%", width: 22, height: 22,
@@ -417,6 +386,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                         </ImgCrop>
                         {preview && (
                             <Button
+                                className="up-btn-remove-photo"
                                 type="link" danger size="small"
                                 style={{ display: "block", margin: "6px auto 0", fontSize: 11 }}
                                 onClick={() => { setPreview(null); setNewImg(""); }}
@@ -434,36 +404,36 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                             rules: [{ pattern: /^[0-9]{10}$/, message: "10 digits" }]
                         },
                     ].map(({ n, l, icon, ph, rules }) => (
-                        <Form.Item key={n} name={n} rules={rules}
+                        <Form.Item className="up-edit-field" key={n} name={n} rules={rules}
                             label={<span style={{ color: "#64748b", fontSize: 11 }}>{l}</span>}
                             style={{ marginBottom: 12 }}
                         >
-                            <Input prefix={<span style={{ color: "#6366f1" }}>{icon}</span>} placeholder={ph} style={inputStyle} />
+                            <Input className="up-edit-input" prefix={<span style={{ color: "#6366f1" }}>{icon}</span>} placeholder={ph} style={inputStyle} />
                         </Form.Item>
                     ))}
 
                     {/* Password Section */}
-                    <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", margin: "12px 0", paddingTop: 12 }}>
-                        <div style={{ color: "#334155", fontSize: 10, letterSpacing: 1, marginBottom: 10 }}>CHANGE PASSWORD</div>
+                    <div className="up-password-section" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", margin: "12px 0", paddingTop: 12 }}>
+                        <div className="up-password-title" style={{ color: "#334155", fontSize: 10, letterSpacing: 1, marginBottom: 10 }}>CHANGE PASSWORD</div>
                         {[
                             { n: "currentPassword", l: "Current", ph: "Current password", rules: [] },
                             { n: "newPassword", l: "New", ph: "New password", rules: [{ min: 8, message: "Min 8 chars" }] },
                         ].map(({ n, l, ph, rules }) => (
-                            <Form.Item key={n} name={n} rules={rules}
+                            <Form.Item className="up-edit-field" key={n} name={n} rules={rules}
                                 label={<span style={{ color: "#64748b", fontSize: 11 }}>{l}</span>}
                                 style={{ marginBottom: 12 }}
                             >
-                                <Input.Password prefix={<LockOutlined style={{ color: "#6366f1" }} />} placeholder={ph} style={inputStyle} />
+                                <Input.Password className="up-edit-input" prefix={<LockOutlined style={{ color: "#6366f1" }} />} placeholder={ph} style={inputStyle} />
                             </Form.Item>
                         ))}
                     </div>
 
-                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                        <Button size="small" onClick={() => setEditing(false)}
+                    <div className="up-edit-actions" style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                        <Button className="up-btn-cancel" size="small" onClick={() => setEditing(false)}
                             style={{ borderRadius: 8, borderColor: "rgba(255,255,255,0.1)", color: "#64748b" }}>
                             Cancel
                         </Button>
-                        <Button size="small" type="primary" htmlType="submit" loading={saving}
+                        <Button className="up-btn-save" size="small" type="primary" htmlType="submit" loading={saving}
                             style={{ borderRadius: 8, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", border: "none" }}>
                             Save Changes
                         </Button>

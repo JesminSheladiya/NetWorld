@@ -54,12 +54,12 @@ function App() {
       <div className="App">
         {isAuthenticated ? (
           <>
-            <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 1000 }}>
+            <div className="app-header-avatar" style={{ position: 'absolute', top: 20, right: 20, zIndex: 1000 }}>
               <Dropdown
                 open={dropdownOpen}
                 onOpenChange={setDropdownOpen}
                 dropdownRender={() => (
-                  <div style={{
+                  <div className="app-dropdown-menu" style={{
                     width: 260,
                     borderRadius: 24,
                     background: '#111827',
@@ -68,8 +68,8 @@ function App() {
                     boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
                   }}
                   >
-                    <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div className="app-dropdown-header" style={{ padding: '18px 18px 14px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                      <div className="app-dropdown-user" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <Avatar
                           size={42}
                           src={profileAvatar}
@@ -77,14 +77,15 @@ function App() {
                         >
                           {!profileAvatar && initials}
                         </Avatar>
-                        <div style={{ overflow: 'hidden', minWidth: 0 }}>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fullName}</div>
-                          <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</div>
+                        <div className="app-dropdown-user-info" style={{ overflow: 'hidden', minWidth: 0 }}>
+                          <div className="app-dropdown-user-name" style={{ fontSize: 15, fontWeight: 700, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fullName}</div>
+                          <div className="app-dropdown-user-email" style={{ fontSize: 13, color: '#94a3b8', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{email}</div>
                         </div>
                       </div>
                     </div>
-                    <div style={{ padding: '10px 0' }}>
+                    <div className="app-dropdown-actions" style={{ padding: '10px 0' }}>
                       <button
+                        className="app-btn-profile"
                         type="button"
                         onClick={() => {
                           setProfileOpen(true);
@@ -111,8 +112,9 @@ function App() {
                         <span>Profile Settings</span>
                       </button>
                     </div>
-                    <div style={{ padding: '10px 18px 18px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <div className="app-dropdown-footer" style={{ padding: '10px 18px 18px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                       <button
+                        className="app-btn-logout"
                         type="button"
                         onClick={handleLogout}
                         style={{
@@ -142,7 +144,7 @@ function App() {
                 placement="bottomRight"
                 trigger={['click']}
               >
-                <div style={{
+                <div className="app-avatar-trigger" style={{
                   width: 50,
                   height: 50,
                   borderRadius: '50%',

@@ -34,11 +34,11 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
   };
 
   return (
-    <div style={{
+    <div className="register-page" style={{
       display: "flex", justifyContent: "center",
       alignItems: "center", height: "100vh", background: "#141414"
     }}>
-      <Card
+      <Card className="register-card"
         style={{
           width: 420,
           background: "linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)",
@@ -48,13 +48,13 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
         }}
         styles={{ body: { padding: "32px 28px" } }}
       >
-        <Title level={2} style={{ textAlign: "center", marginBottom: 24, color: "#f1f5f9" }}>
+        <Title className="register-title" level={2} style={{ textAlign: "center", marginBottom: 24, color: "#f1f5f9" }}>
           Net World Register
         </Title>
 
-        <Form name="register" onFinish={onFinish} autoComplete="off" layout="vertical">
+        <Form className="register-form" name="register" onFinish={onFinish} autoComplete="off" layout="vertical">
 
-          <Form.Item name="name"
+          <Form.Item className="register-field" name="name"
             rules={[
               { required: true, message: "Please enter your full name!" },
               {
@@ -67,45 +67,45 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
                 }
               }
             ]}>
-            <Input prefix={<UserOutlined style={{ color: "#38bdf8" }} />} placeholder="Enter Name" size="large" />
+            <Input className="register-input" prefix={<UserOutlined style={{ color: "#38bdf8" }} />} placeholder="Enter Name" size="large" />
           </Form.Item>
 
-          <Form.Item name="email"
+          <Form.Item className="register-field" name="email"
             rules={[
               { required: true, message: "Please enter email!" },
               { type: "email", message: "Please enter a valid email!" }
             ]}>
-            <Input prefix={<MailOutlined style={{ color: "#38bdf8" }} />} placeholder="Email" size="large" />
+            <Input className="register-input" prefix={<MailOutlined style={{ color: "#38bdf8" }} />} placeholder="Email" size="large" />
           </Form.Item>
 
-          <Form.Item name="phone"
+          <Form.Item className="register-field" name="phone"
             rules={[
               { required: true, message: "Please enter phone!" },
               { pattern: /^[0-9]{10}$/, message: "Phone must be 10 digits!" }
             ]}>
-            <Input prefix={<PhoneOutlined style={{ color: "#38bdf8" }} />} placeholder="Phone (10 digits)" size="large" />
+            <Input className="register-input" prefix={<PhoneOutlined style={{ color: "#38bdf8" }} />} placeholder="Phone (10 digits)" size="large" />
           </Form.Item>
 
-          <Form.Item name="password"
+          <Form.Item className="register-field" name="password"
             rules={[
               { required: true, message: "Please enter password!" },
               { min: 8, message: "Password must be at least 8 characters!" }
             ]}>
-            <Input.Password prefix={<LockOutlined style={{ color: "#38bdf8" }} />} placeholder="Password" size="large" />
+            <Input.Password className="register-input" prefix={<LockOutlined style={{ color: "#38bdf8" }} />} placeholder="Password" size="large" />
           </Form.Item>
 
-          <Form.Item>
-            <Button type="primary" htmlType="submit"
+          <Form.Item className="register-field">
+            <Button className="register-btn" type="primary" htmlType="submit"
               loading={loading} block size="large">
               Register
             </Button>
           </Form.Item>
         </Form>
 
-        <div style={{ textAlign: "center", marginTop: 8 }}>
-          <Typography.Text style={{ color: "#94a3b8" }}>
+        <div className="register-footer" style={{ textAlign: "center", marginTop: 8 }}>
+          <Typography.Text className="register-footer-text" style={{ color: "#94a3b8" }}>
             Already have an account?{" "}
-            <a onClick={onSwitchForm} style={{ cursor: "pointer", color: "#38bdf8", fontWeight: 600 }}>
+            <a className="register-switch-link" onClick={onSwitchForm} style={{ cursor: "pointer", color: "#38bdf8", fontWeight: 600 }}>
               Login here
             </a>
           </Typography.Text>
