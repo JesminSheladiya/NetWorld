@@ -313,9 +313,9 @@ INSERT INTO relation_inference_rules
 ('CHILD','F','COUSIN','M','Cousin'),
 ('CHILD','F','COUSIN','F','Cousin'),
 
--- Cousin Brother + Cousin Sister → cross-generation fallback: uncle/nephew
-('COUSIN','M','COUSIN','F','Uncle'),
-('COUSIN','F','COUSIN','M','Niece'),
+-- Cousin Brother + Cousin Sister → cousins to each other
+('COUSIN','M','COUSIN','F','Cousin'),
+('COUSIN','F','COUSIN','M','Cousin'),
 
 -- =============================================
 -- PIBLING + PIBLING / NIBLING + NIBLING cross
@@ -343,11 +343,10 @@ INSERT INTO relation_inference_rules
 ('NIBLING','F','PIBLING','M','Cousin'),
 ('NIBLING','F','PIBLING','F','Cousin'),
 
--- COUSIN + COUSIN → SIBLING (both cousins of user, siblings to each other? No, they could be from different sides)
--- Fallback: cousins of same user are siblings to each other if from same parent's sibling
-('COUSIN','N','COUSIN','N','Brother'),
-('COUSIN','M','COUSIN','M','Brother'),
-('COUSIN','F','COUSIN','F','Sister'),
+-- COUSIN + COUSIN → both are cousins to each other
+('COUSIN','N','COUSIN','N','Cousin'),
+('COUSIN','M','COUSIN','M','Cousin'),
+('COUSIN','F','COUSIN','F','Cousin'),
 
 -- COUSIN + PIBLING → NIBLING (my cousin to my uncle = nephew/niece of uncle)
 ('COUSIN','N','PIBLING','M','Nephew'),

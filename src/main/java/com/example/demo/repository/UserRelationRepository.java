@@ -20,8 +20,8 @@ public interface UserRelationRepository extends JpaRepository<UserRelation, Long
     
     @Query("""
         SELECT ur FROM UserRelation ur
-        WHERE ur.toUser = :commonUser
-          AND ur.fromUser <> :me
+        WHERE ((ur.toUser = :commonUser AND ur.fromUser <> :me)
+           OR  (ur.fromUser = :commonUser AND ur.toUser <> :me))
           AND ur.status = 'ACCEPTED'
     """)
     List<UserRelation> findOthersRelatedToSameUser(

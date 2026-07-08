@@ -77,6 +77,8 @@ public class RelationService {
                     inferredName = rulesMap.get(catA + "|" + genderA + "|" + catB + "|N");
                 if (inferredName == null)
                     inferredName = rulesMap.get(catA + "|N|" + catB + "|" + genderB);
+                if (inferredName == null)
+                    inferredName = rulesMap.get(catA + "|N|" + catB + "|N");
 
                 // ── 5. Generation-level fallback when no rule matches ──
                 if (inferredName == null) {
