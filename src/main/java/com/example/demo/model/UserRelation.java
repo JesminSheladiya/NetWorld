@@ -29,7 +29,7 @@ public class UserRelation {
     private Relation relation;
 
     @Column(nullable = false, length = 20)
-    private String status = "PENDING"; // PENDING | ACCEPTED | DECLINED
+    private String status = "PENDING"; // PENDING | ACCEPTED | DECLINED | SUGGESTED
 
     public UserRelation() {}
 

@@ -33,7 +33,6 @@ public class UserRelationController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    /** Search users by name or email */
     @GetMapping("/search-users")
     public ResponseEntity<List<Map<String, Object>>> searchUsers(
             @RequestParam String query,
@@ -52,7 +51,6 @@ public class UserRelationController {
         return ResponseEntity.ok(result);
     }
 
-    /** Send relation request to another user */
     @PostMapping("/send")
     public ResponseEntity<?> sendRequest(
             @AuthenticationPrincipal UserDetails ud,
@@ -66,7 +64,6 @@ public class UserRelationController {
         return ResponseEntity.ok(resp);
     }
 
-    /** Accept a PENDING relation request */
     @PostMapping("/{id}/accept")
     public ResponseEntity<?> accept(
             @PathVariable Long id,
@@ -77,7 +74,6 @@ public class UserRelationController {
         return ResponseEntity.ok(resp);
     }
 
-    /** Decline a PENDING relation request */
     @PostMapping("/{id}/decline")
     public ResponseEntity<?> decline(
             @PathVariable Long id,
@@ -88,28 +84,25 @@ public class UserRelationController {
         return ResponseEntity.ok(resp);
     }
 
-    /** Get all PENDING requests sent TO me */
     @GetMapping("/pending")
     public ResponseEntity<List<UserRelationSuggestionDTO>> getPending(
             @AuthenticationPrincipal UserDetails ud) {
         return ResponseEntity.ok(userRelationService.getPendingRequests(getCurrentUser(ud)));
     }
 
-    /** Get inferred suggestions */
+    // Returns system-inferred SUGGESTED entries
     @GetMapping("/suggestions")
     public ResponseEntity<List<UserRelationSuggestionDTO>> getSuggestions(
             @AuthenticationPrincipal UserDetails ud) {
         return ResponseEntity.ok(userRelationService.getInferredSuggestions(getCurrentUser(ud)));
     }
 
-    /** Get all my accepted connections */
     @GetMapping("/connections")
     public ResponseEntity<List<UserRelationSuggestionDTO>> getConnections(
             @AuthenticationPrincipal UserDetails ud) {
         return ResponseEntity.ok(userRelationService.getMyConnections(getCurrentUser(ud)));
     }
 
-    /** Accept an inferred suggestion */
     @PostMapping("/suggestions/accept")
     public ResponseEntity<?> acceptSuggestion(
             @AuthenticationPrincipal UserDetails ud,
@@ -119,7 +112,17 @@ public class UserRelationController {
                 body.get("otherEmail"),
                 body.get("relationName"));
         Map<String, String> resp = new HashMap<>();
-        resp.put("message", "Suggestion accepted!");
+        resp.put("message", "Accepted!");
+        return ResponseEntity.ok(resp);
+    }
+
+    @DeleteMapping("/suggestions/{id}/dismiss")
+    public ResponseEntity<?> dismissSuggestion(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails ud) {
+        userRelationService.dismissSuggestion(id, getCurrentUser(ud));
+        Map<String, String> resp = new HashMap<>();
+        resp.put("message", "Dismissed!");
         return ResponseEntity.ok(resp);
     }
 }

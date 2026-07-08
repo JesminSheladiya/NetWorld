@@ -11,22 +11,17 @@ import java.util.Optional;
 
 public interface UserRelationRepository extends JpaRepository<UserRelation, Long> {
 
-
     List<UserRelation> findByFromUser(User fromUser);
-
     List<UserRelation> findByToUser(User toUser);
-
     List<UserRelation> findByFromUserAndStatus(User fromUser, String status);
-
     List<UserRelation> findByToUserAndStatus(User toUser, String status);
-
     Optional<UserRelation> findByFromUserAndToUser(User fromUser, User toUser);
 
-
+    
     @Query("""
         SELECT ur FROM UserRelation ur
-        WHERE ur.toUser = :commonUser
-          AND ur.fromUser <> :me
+        WHERE ((ur.toUser = :commonUser AND ur.fromUser <> :me)
+           OR  (ur.fromUser = :commonUser AND ur.toUser <> :me))
           AND ur.status = 'ACCEPTED'
     """)
     List<UserRelation> findOthersRelatedToSameUser(
