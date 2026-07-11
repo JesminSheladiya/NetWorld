@@ -6,6 +6,7 @@ public class UserRelationSuggestionDTO {
     private Long   pendingRelationId;
     private String suggestedUserName;
     private String suggestedUserEmail;
+    private String suggestedUserPhone;
     private String suggestedUserProfilePic;
     private String inferredRelation;
     private String reason;
@@ -16,6 +17,7 @@ public class UserRelationSuggestionDTO {
     public UserRelationSuggestionDTO(Long pendingRelationId,
                                      String suggestedUserName,
                                      String suggestedUserEmail,
+                                     String suggestedUserPhone,
                                      String suggestedUserProfilePic,
                                      String inferredRelation,
                                      String reason,
@@ -23,6 +25,7 @@ public class UserRelationSuggestionDTO {
         this.pendingRelationId      = pendingRelationId;
         this.suggestedUserName      = suggestedUserName;
         this.suggestedUserEmail     = suggestedUserEmail;
+        this.suggestedUserPhone     = suggestedUserPhone;
         this.suggestedUserProfilePic = suggestedUserProfilePic;
         this.inferredRelation       = inferredRelation;
         this.reason                 = reason;
@@ -32,6 +35,7 @@ public class UserRelationSuggestionDTO {
     public Long   getPendingRelationId()       { return pendingRelationId; }
     public String getSuggestedUserName()       { return suggestedUserName; }
     public String getSuggestedUserEmail()      { return suggestedUserEmail; }
+    public String getSuggestedUserPhone()      { return suggestedUserPhone; }
     public String getSuggestedUserProfilePic() { return suggestedUserProfilePic; }
     public String getInferredRelation()        { return inferredRelation; }
     public String getReason()                  { return reason; }

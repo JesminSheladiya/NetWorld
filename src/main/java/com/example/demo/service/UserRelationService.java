@@ -82,15 +82,13 @@ public class UserRelationService {
         return userRelationRepo.findByToUserAndStatus(currentUser, "PENDING")
                 .stream()
                 .filter(ur -> {
-                    // Only show if the fromUser actually sent it (not system-generated)
-                    // System suggestions are stored with status SUGGESTED
                     return true;
                 })
                 .map(ur -> {
                     User s = ur.getFromUser();
                     String name = s.getFullName() != null ? s.getFullName() : s.getDisplayName();
                     return new UserRelationSuggestionDTO(
-                            ur.getId(), name, s.getEmail(), s.getProfilePicture(),
+                            ur.getId(), name, s.getEmail(), s.getPhone(), s.getProfilePicture(),
                             ur.getRelation().getRelationName(),
                             name + " wants to add you as their " + ur.getRelation().getRelationName(),
                             "PENDING");
@@ -103,7 +101,7 @@ public class UserRelationService {
                     User o = ur.getToUser();
                     String name = o.getFullName() != null ? o.getFullName() : o.getDisplayName();
                     return new UserRelationSuggestionDTO(
-                            ur.getId(), name, o.getEmail(), o.getProfilePicture(),
+                            ur.getId(), name, o.getEmail(), o.getPhone(), o.getProfilePicture(),
                             ur.getRelation().getRelationName(), null, "ACCEPTED");
                 }).collect(Collectors.toList());
     }
@@ -122,7 +120,7 @@ public class UserRelationService {
                     String reason = buildReason(currentUser, o);
 
                     return new UserRelationSuggestionDTO(
-                            ur.getId(), name, o.getEmail(), o.getProfilePicture(),
+                            ur.getId(), name, o.getEmail(), o.getPhone(), o.getProfilePicture(),
                             ur.getRelation().getRelationName(),
                             reason,
                             "SUGGESTED");
