@@ -227,10 +227,10 @@
 .suggestions-panel {
   margin-top: 24px;
   background: linear-gradient(145deg, rgba(15,23,42,0.96) 0%, rgba(10,14,26,0.98) 100%);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.25);
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99,102,241,0.08);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(56,189,248,0.08);
 }
 
 .suggestions-panel-header {
@@ -239,7 +239,7 @@
   justify-content: space-between;
   padding: 18px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06), rgba(139, 92, 246, 0.04));
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.06), rgba(59, 130, 246, 0.04));
 }
 
 .suggestions-close-btn:hover {
@@ -252,8 +252,8 @@
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -276,15 +276,15 @@
 }
 
 .discovery-tabs .ant-tabs-tab:hover {
-  color: #a78bfa !important;
+  color: #38bdf8 !important;
 }
 
 .discovery-tabs .ant-tabs-tab-active .discovery-tab-label {
-  color: #a78bfa !important;
+  color: #38bdf8 !important;
 }
 
 .discovery-tabs .ant-tabs-ink-bar {
-  background: linear-gradient(90deg, #6366f1, #8b5cf6) !important;
+  background: linear-gradient(90deg, #38bdf8, #3b82f6) !important;
   height: 2.5px !important;
   border-radius: 2px !important;
 }
@@ -308,7 +308,6 @@
    Discovery Common Components
 =========================== */
 .suggestions-list {
-  padding: 18px 20px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -329,7 +328,7 @@
 }
 
 .discovery-refresh-btn {
-  color: #818cf8 !important;
+  color: #38bdf8 !important;
   font-size: 11px !important;
   border-radius: 6px !important;
   padding: 2px 8px !important;
@@ -337,12 +336,12 @@
 }
 
 .discovery-refresh-btn:hover {
-  background: rgba(99, 102, 241, 0.1) !important;
-  color: #a78bfa !important;
+  background: rgba(56, 189, 248, 0.1) !important;
+  color: #38bdf8 !important;
 }
 
 .discovery-empty {
-  text-align: start;
+  text-align: center;
   padding: 36px 0;
 }
 
@@ -356,10 +355,11 @@
   color: #475569;
   font-size: 13px;
   font-weight: 500;
+  text-align: center;
 }
 
 .discovery-loading {
-  text-align: start;
+  text-align: left;
   padding: 28px;
   color: #64748b;
   font-size: 13px;
@@ -380,13 +380,13 @@
 }
 
 .discovery-badge-purple {
-  background: rgba(139, 92, 246, 0.2);
-  color: #a78bfa;
+  background: rgba(59, 130, 246, 0.2);
+  color: #38bdf8;
 }
 
 .discovery-badge-indigo {
-  background: rgba(99, 102, 241, 0.2);
-  color: #818cf8;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
 }
 
 /* ===========================
@@ -402,7 +402,7 @@
   flex: 1 !important;
   height: 38px !important;
   background: #0d1117 !important;
-  border: 1px solid rgba(99, 102, 241, 0.25) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
   color: #f8fafc !important;
   border-radius: 10px !important;
   font-size: 13px !important;
@@ -410,30 +410,30 @@
 }
 
 .discovery-input:hover {
-  border-color: rgba(99, 102, 241, 0.4) !important;
+  border-color: rgba(56, 189, 248, 0.4) !important;
 }
 
 .discovery-input:focus {
-  border-color: #6366f1 !important;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15) !important;
 }
 
 .discovery-search-btn {
   height: 38px !important;
   border-radius: 10px !important;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  background: linear-gradient(135deg, #38bdf8, #3b82f6) !important;
   border: none !important;
   color: #fff !important;
   font-weight: 600 !important;
   font-size: 13px !important;
   padding: 0 18px !important;
   transition: all 0.2s ease !important;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25) !important;
+  box-shadow: 0 2px 8px rgba(56, 189, 248, 0.25) !important;
 }
 
 .discovery-search-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35) !important;
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35) !important;
 }
 
 /* ===========================
@@ -442,45 +442,52 @@
 .discovery-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 14px;
   padding: 12px 16px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: left;
   transition: all 0.25s ease;
 }
 
 .discovery-row:hover {
-  background: rgba(99, 102, 241, 0.06);
-  border-color: rgba(99, 102, 241, 0.2);
+  background: rgba(56, 189, 248, 0.06);
+  border-color: rgba(56, 189, 248, 0.2);
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .discovery-avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #38bdf8, #3b82f6);
 }
 
 .discovery-row-info {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .discovery-row-name {
   color: #e2e8f0;
   font-size: 13px;
   font-weight: 600;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -489,7 +496,7 @@
 .discovery-row-email {
   color: #64748b;
   font-size: 11px;
-  margin-top: 2px;
+  text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -497,9 +504,10 @@
 
 .discovery-row-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .discovery-sent-badge {
@@ -508,23 +516,26 @@
   font-weight: 700;
   background: rgba(16, 185, 129, 0.1);
   border-radius: 20px;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border: 1px solid rgba(16, 185, 129, 0.25);
   letter-spacing: 0.3px;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .discovery-relation-select {
-  width: 95px !important;
+  width: 110px !important;
 }
 
 .discovery-relation-select .ant-select-selector {
   background: rgba(15, 23, 42, 0.8) !important;
-  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
   border-radius: 8px !important;
-  height: 30px !important;
-  font-size: 11px !important;
+  height: 32px !important;
+  font-size: 12px !important;
   color: #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
 .discovery-rel-chip {
@@ -538,29 +549,31 @@
 }
 
 .discovery-send-btn {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #38bdf8, #3b82f6);
   border: none;
   color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 6px rgba(56, 189, 248, 0.3);
 }
 
 .discovery-send-btn:hover:not(:disabled) {
   transform: scale(1.08);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
 }
 
 .discovery-send-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
 .suggestions-tab-wrap {
   padding: 18px 22px;
 }
@@ -577,12 +590,14 @@
   font-weight: 700;
   font-size: 14px;
   letter-spacing: 0.2px;
+  text-align: left;
 }
 
 .suggestions-tab-subtitle {
   color: #475569;
   font-size: 11px;
   margin-top: 3px;
+  text-align: left;
 }
 
 .discovery-empty-sub {
@@ -604,14 +619,15 @@
   gap: 16px;
   padding: 14px 18px;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(139,92,246,0.02));
-  border: 1px solid rgba(99, 102, 241, 0.15);
+  background: linear-gradient(135deg, rgba(56,189,248,0.04), rgba(59,130,246,0.02));
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  text-align: left;
   transition: all 0.25s ease;
 }
 
 .suggestion-card:hover {
-  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.04));
-  border-color: rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(59,130,246,0.04));
+  border-color: rgba(56, 189, 248, 0.3);
   transform: translateY(-1px);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
 }
@@ -622,6 +638,7 @@
   gap: 14px;
   flex: 1;
   min-width: 0;
+  text-align: left;
 }
 
 .suggestion-card-avatar {
@@ -642,6 +659,10 @@
 .suggestion-card-info {
   flex: 1;
   min-width: 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .suggestion-card-name {
@@ -649,12 +670,14 @@
   font-weight: 600;
   font-size: 13px;
   line-height: 1.3;
+  text-align: left;
 }
 
 .suggestion-card-email {
   color: #64748b;
   font-size: 11px;
   margin-top: 2px;
+  text-align: left;
 }
 
 .suggestion-card-reason {
@@ -664,15 +687,17 @@
   margin-top: 5px;
   color: #475569;
   font-size: 11px;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 .suggestion-auto-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.25);
   border-radius: 4px;
   padding: 1px 6px;
   font-size: 9px;
@@ -751,14 +776,14 @@
   gap: 16px;
   padding: 14px 18px;
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(99,102,241,0.03), rgba(139,92,246,0.015));
+  background: linear-gradient(135deg, rgba(56,189,248,0.03), rgba(59,130,246,0.015));
   border: 1px solid rgba(255, 255, 255, 0.06);
   transition: all 0.25s ease;
 }
 
 .inferred-card:hover {
-  background: linear-gradient(135deg, rgba(99,102,241,0.07), rgba(139,92,246,0.03));
-  border-color: rgba(99, 102, 241, 0.2);
+  background: linear-gradient(135deg, rgba(56,189,248,0.07), rgba(59,130,246,0.03));
+  border-color: rgba(56, 189, 248, 0.2);
   transform: translateY(-1px);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
 }
@@ -810,7 +835,7 @@
 }
 
 .inferred-person.right .inferred-person-name {
-  text-align: end;
+  text-align: right;
 }
 
 .inferred-chain {
@@ -914,16 +939,18 @@
 }
 
 .suggestions-panel-title {
-  color: #f1f5f9;
+  color: #38bdf8;
   font-weight: 700;
   font-size: 16px;
   letter-spacing: 0.3px;
+  text-align: left;
 }
 
 .suggestions-panel-subtitle {
   color: #64748b;
   font-size: 12px;
   margin-top: 1px;
+  text-align: left;
 }
 
 .suggestions-close-btn {
@@ -939,6 +966,7 @@
    Results Label
 =========================== */
 .discovery-results-label {
+  text-align: left;
   color: #64748b;
   font-size: 11px;
   font-weight: 600;
@@ -973,6 +1001,7 @@
 .suggestions-empty-text {
   color: #475569;
   font-size: 12px;
+  text-align: center;
 }
 
 /* ===========================
