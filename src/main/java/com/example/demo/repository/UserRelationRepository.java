@@ -16,8 +16,9 @@ public interface UserRelationRepository extends JpaRepository<UserRelation, Long
     List<UserRelation> findByFromUserAndStatus(User fromUser, String status);
     List<UserRelation> findByToUserAndStatus(User toUser, String status);
     Optional<UserRelation> findByFromUserAndToUser(User fromUser, User toUser);
+    List<UserRelation> findByStatus(String status);
 
-    
+
     @Query("""
         SELECT ur FROM UserRelation ur
         WHERE ((ur.toUser = :commonUser AND ur.fromUser <> :me)
