@@ -57,7 +57,7 @@ public class UserRelationService {
         ur.setStatus("ACCEPTED");
         userRelationRepo.save(ur);
 
-        Relation reverse = findReverseRelation(ur.getRelation());
+        Relation reverse = findReverseRelation(ur.getRelation(), ur.getFromUser());
         if (reverse != null && userRelationRepo.findByFromUserAndToUser(currentUser, ur.getFromUser()).isEmpty()) {
             userRelationRepo.save(new UserRelation(currentUser, ur.getFromUser(), reverse, "ACCEPTED"));
         }
@@ -181,36 +181,30 @@ public class UserRelationService {
         }
     }
 
-    // Direct 1-hop mirror — only used right after a manual request is accepted
-    private Relation findReverseRelation(Relation rel) {
-        if (rel == null) return null;
-        Map<String, String> mirror = new HashMap<>();
-        mirror.put("son",             "Father");
-        mirror.put("daughter",        "Father");
-        mirror.put("father",          "Son");
-        mirror.put("mother",          "Son");
-        mirror.put("brother",         "Brother");
-        mirror.put("sister",          "Sister");
-        mirror.put("grandfather",     "Grandson");
-        mirror.put("grandmother",     "Grandson");
-        mirror.put("grandson",        "Grandfather");
-        mirror.put("granddaughter",   "Grandfather");
-        mirror.put("husband",         "Wife");
-        mirror.put("wife",            "Husband");
-        mirror.put("uncle",           "Nephew");
-        mirror.put("aunt",            "Nephew");
-        mirror.put("nephew",          "Uncle");
-        mirror.put("niece",           "Uncle");
-        mirror.put("father-in-law",   "Son-in-law");
-        mirror.put("mother-in-law",   "Son-in-law");
-        mirror.put("son-in-law",      "Father-in-law");
-        mirror.put("daughter-in-law", "Father-in-law");
-        mirror.put("brother-in-law",  "Brother-in-law");
-        mirror.put("sister-in-law",   "Sister-in-law");
-        mirror.put("cousin",          "Cousin");
-        mirror.put("cousin brother",  "Cousin");
-        mirror.put("cousin sister",   "Cousin");
-        String rev = mirror.get(rel.getRelationName().toLowerCase());
-        return rev == null ? null : relationRepository.findByRelationNameIgnoreCase(rev).orElse(null);
+    private static final Map<String, String> CATEGORY_REVERSE = Map.of(
+            "PARENT", "CHILD",
+            "CHILD", "PARENT",
+            "SIBLING", "SIBLING",
+            "SPOUSE", "SPOUSE",
+            "GRANDPARENT", "GRANDCHILD",
+            "GRANDCHILD", "GRANDPARENT",
+            "INLAW", "INLAW",
+            "PIBLING", "NIBLING",
+            "NIBLING", "PIBLING",
+            "COUSIN", "COUSIN"
+    );
+
+    // genderSource = person this reverse relation describes (ur.getFromUser())
+    private Relation findReverseRelation(Relation rel, User genderSource) {
+        if (rel == null || genderSource == null || genderSource.getGender() == null) return null;
+
+        String reverseCategory = CATEGORY_REVERSE.get(rel.getRelationCategory());
+        if (reverseCategory == null) return null;
+
+        Integer reverseLevel = -rel.getGenerationLevel();
+
+        return relationRepository
+                .findByRelationCategoryAndGenerationLevelAndGender(reverseCategory, reverseLevel, genderSource.getGender())
+                .orElse(null);
     }
 }

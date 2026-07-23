@@ -9,14 +9,15 @@ import java.util.*;
 @Service
 public class RelationshipResolver {
 
-    private enum Step { UP, DOWN, SPOUSE }
+    private enum Step { UP, DOWN, SPOUSE, SIBLING }
 
     public static class Graph {
-        Map<Long, Set<Long>> parentOf = new HashMap<>();
-        Map<Long, Set<Long>> childOf  = new HashMap<>();
-        Map<Long, Long> spouseOf      = new HashMap<>();
-        Map<Long, String> genderOf    = new HashMap<>();
-        Map<Long, User> users         = new HashMap<>();
+        Map<Long, Set<Long>> parentOf  = new HashMap<>();
+        Map<Long, Set<Long>> childOf   = new HashMap<>();
+        Map<Long, Long> spouseOf       = new HashMap<>();
+        Map<Long, Set<Long>> siblingOf = new HashMap<>();
+        Map<Long, String> genderOf     = new HashMap<>();
+        Map<Long, User> users          = new HashMap<>();
 
         void addParentEdge(User child, User parent) {
             parentOf.computeIfAbsent(child.getId(), k -> new HashSet<>()).add(parent.getId());
@@ -32,34 +33,40 @@ public class RelationshipResolver {
             users.put(b.getId(), b);
         }
 
-        void noteGender(User person, String gender) {
-            if (gender != null && !"N".equals(gender)) {
-                genderOf.put(person.getId(), gender);
+        void addSiblingEdge(User a, User b) {
+            siblingOf.computeIfAbsent(a.getId(), k -> new HashSet<>()).add(b.getId());
+            siblingOf.computeIfAbsent(b.getId(), k -> new HashSet<>()).add(a.getId());
+            users.put(a.getId(), a);
+            users.put(b.getId(), b);
+        }
+
+        void noteGender(User person, String userGender) {
+            if (userGender != null && !"N".equals(userGender)) {
+                genderOf.put(person.getId(), userGender);
             }
             users.put(person.getId(), person);
         }
     }
 
-    /** Builds the primitive graph from ALL accepted relations.
-     *  Only PARENT / CHILD / SPOUSE categories become edges — everything else
-     *  (SIBLING, UNCLE, GRANDPARENT...) is a derived label and is never used
-     *  as an edge, so it can never introduce a wrong or ambiguous path. */
+    /** PARENT/CHILD/SPOUSE/SIBLING become real edges — everything else
+     *  (GRANDPARENT, UNCLE, COUSIN, INLAW...) is a derived label and is
+     *  never used as an edge, so it can never introduce a wrong/ambiguous path. */
     public Graph buildGraph(List<UserRelation> acceptedRelations) {
         Graph g = new Graph();
         for (UserRelation ur : acceptedRelations) {
             User from = ur.getFromUser();
             User to   = ur.getToUser();
             String category = ur.getRelation().getRelationCategory();
-            String gender   = ur.getRelation().getGender();
 
-            // relation describes what 'to' is to 'from' → we learn to's gender
-            g.noteGender(to, gender);
+            g.noteGender(to, to.getGender());
+            g.noteGender(from, from.getGender());
 
             switch (category) {
-                case "PARENT" -> g.addParentEdge(from, to);   // to is parent of from
-                case "CHILD"  -> g.addParentEdge(to, from);   // to is child of from
-                case "SPOUSE" -> g.addSpouseEdge(from, to);
-                default -> { /* derived category, ignore as edge on purpose */ }
+                case "PARENT"  -> g.addParentEdge(from, to);
+                case "CHILD"   -> g.addParentEdge(to, from);
+                case "SPOUSE"  -> g.addSpouseEdge(from, to);
+                case "SIBLING" -> g.addSiblingEdge(from, to);
+                default -> { }
             }
         }
         return g;
@@ -67,8 +74,6 @@ public class RelationshipResolver {
 
     private record Node(Long id, List<Step> path) {}
 
-    /** Shortest path only — BFS visits each node once, so every person gets exactly
-     *  ONE interpretation. This is what eliminates the old ambiguity bug. */
     private List<Step> findPath(Graph g, Long fromId, Long toId, int maxDepth) {
         if (fromId.equals(toId)) return null;
 
@@ -94,6 +99,10 @@ public class RelationshipResolver {
                 if (sp.equals(toId)) return append(cur.path(), Step.SPOUSE);
                 if (visited.add(sp)) queue.add(new Node(sp, append(cur.path(), Step.SPOUSE)));
             }
+            for (Long sib : g.siblingOf.getOrDefault(cur.id(), Set.of())) {
+                if (sib.equals(toId)) return append(cur.path(), Step.SIBLING);
+                if (visited.add(sib)) queue.add(new Node(sib, append(cur.path(), Step.SIBLING)));
+            }
         }
         return null;
     }
@@ -104,8 +113,6 @@ public class RelationshipResolver {
         return np;
     }
 
-    /** Returns what 'toId' is to 'fromId' — matches DB convention:
-     *  UserRelation(from, to, relation) means "to is relation to from". */
     public String resolve(Graph g, Long fromId, Long toId) {
         List<Step> path = findPath(g, fromId, toId, 4);
         if (path == null || path.isEmpty()) return null;
@@ -113,31 +120,34 @@ public class RelationshipResolver {
         boolean f = "F".equals(g.genderOf.getOrDefault(toId, "N"));
 
         String pattern = path.stream()
-                .map(s -> switch (s) { case UP -> "U"; case DOWN -> "D"; case SPOUSE -> "S"; })
+                .map(s -> switch (s) { case UP -> "U"; case DOWN -> "D"; case SPOUSE -> "S"; case SIBLING -> "B"; })
                 .reduce("", String::concat);
 
         return switch (pattern) {
-            case "U"  -> f ? "Mother" : "Father";
-            case "D"  -> f ? "Daughter" : "Son";
-            case "S"  -> f ? "Wife" : "Husband";
-            case "UU" -> f ? "Grandmother" : "Grandfather";
-            case "DD" -> f ? "Granddaughter" : "Grandson";
+            case "U"   -> f ? "Mother" : "Father";
+            case "D"   -> f ? "Daughter" : "Son";
+            case "S"   -> f ? "Wife" : "Husband";
+            case "B"   -> f ? "Sister" : "Brother";
+            case "UU"  -> f ? "Grandmother" : "Grandfather";
+            case "DD"  -> f ? "Granddaughter" : "Grandson";
 
-            // UD = up to shared parent, down to other child      → Sibling
-            // DU = down to shared child, up to child's other parent → Spouse
-            case "UD" -> f ? "Sister" : "Brother";
-            case "DU" -> f ? "Wife" : "Husband";
+            case "UD"  -> f ? "Sister" : "Brother";   // shared parent, other child
+            case "DU"  -> f ? "Wife" : "Husband";     // shared child, other parent
+            case "BU"  -> f ? "Mother" : "Father";     // sibling's parent = my parent
+            case "BD"  -> f ? "Niece" : "Nephew";      // sibling's child
+            case "BS"  -> f ? "Sister-in-law" : "Brother-in-law";  // sibling's spouse
+            case "SB"  -> f ? "Sister-in-law" : "Brother-in-law";  // spouse's sibling
 
-            case "SU" -> f ? "Mother-in-law" : "Father-in-law";   // spouse's parent
-            case "DS" -> f ? "Daughter-in-law" : "Son-in-law";    // child's spouse
+            case "SU"  -> f ? "Mother-in-law" : "Father-in-law";
+            case "DS"  -> f ? "Daughter-in-law" : "Son-in-law";
 
-            case "UUD" -> f ? "Aunt" : "Uncle";                   // grandparent's other child
-            case "UDD" -> f ? "Niece" : "Nephew";                 // sibling's child
-            case "UDS", "SUD", "DUS" -> f ? "Sister-in-law" : "Brother-in-law";
+            case "UUD", "UB" -> f ? "Aunt" : "Uncle";
+            case "UDD", "BDD" -> f ? "Niece" : "Nephew";
+            case "UDS", "SUD", "DUS", "BSU" -> f ? "Sister-in-law" : "Brother-in-law";
 
-            case "UUDD" -> "Cousin";                              // grandparent's grandchild via sibling branch
+            case "UUDD", "UBD" -> "Cousin";
 
-            default -> null; // unsupported/ambiguous path → skip rather than guess wrong
+            default -> null;
         };
     }
 }

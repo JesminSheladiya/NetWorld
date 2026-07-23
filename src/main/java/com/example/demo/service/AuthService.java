@@ -39,6 +39,7 @@ public class AuthService {
         u.setEmail(req.getEmail());
         u.setPhone(req.getPhone());
         u.setFullName(req.getFullName());
+        u.setGender(req.getGender());
         users.save(u);
 
         return buildResponse(u);
@@ -68,6 +69,9 @@ public class AuthService {
         if (req.getFullName() != null && !req.getFullName().isBlank())
             u.setFullName(req.getFullName());
 
+        if (req.getGender() != null && !req.getGender().isBlank())
+            u.setGender(req.getGender());
+
         if (req.getProfilePicture() != null)
             u.setProfilePicture(req.getProfilePicture());
 
@@ -91,7 +95,8 @@ public class AuthService {
                 u.getPhone(),
                 u.getFullName(),
                 u.getId(),
-                u.getProfilePicture()
+                u.getProfilePicture(),
+                u.getGender()
         );
     }
 }
