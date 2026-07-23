@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Form, Input, Button, Card, message, Typography } from "antd";
+import { Form, Input, Button, Card, message, Typography, Select } from "antd";
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons";
 import { register } from "../Services/authService";
 
@@ -18,7 +18,8 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
         values.email,
         values.phone,
         values.password,
-        values.name.trim()
+        values.name.trim(),
+        values.gender
       );
       message.success(`Welcome, ${data.username}! Registration successful.`);
       onRegisterSuccess();
@@ -92,6 +93,19 @@ function Register({ onRegisterSuccess, onSwitchForm }) {
               { min: 8, message: "Password must be at least 8 characters!" }
             ]}>
             <Input.Password className="register-input" prefix={<LockOutlined style={{ color: "#38bdf8" }} />} placeholder="Password" size="large" />
+          </Form.Item>
+
+          <Form.Item className="register-field" name="gender"
+            rules={[{ required: true, message: "Please select gender!" }]}>
+            <Select
+              className="register-input"
+              placeholder="Gender"
+              size="large"
+              options={[
+                { value: "M", label: "Male" },
+                { value: "F", label: "Female" },
+              ]}
+            />
           </Form.Item>
 
           <Form.Item className="register-field">

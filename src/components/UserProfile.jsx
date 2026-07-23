@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Modal, Form, Input, Button, message, Avatar, Upload, Tabs, Spin } from "antd";
+import { Modal, Form, Input, Button, message, Avatar, Upload, Tabs, Spin, Select } from "antd";
 import {
     UserOutlined, PhoneOutlined, LockOutlined, EditOutlined,
     CameraOutlined, CheckOutlined, CloseOutlined,
@@ -151,7 +151,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
         setSaving(true);
         try {
             const updated = await updateProfile({
-                fullName: values.fullName, phone: values.phone,
+                fullName: values.fullName, phone: values.phone, gender: values.gender,
                 currentPassword: values.currentPassword, newPassword: values.newPassword,
                 ...(newImg !== null && { profilePicture: newImg }),
             });
@@ -251,7 +251,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                             fontSize: 12,
                         }}
                         onClick={() => {
-                            form.setFieldsValue({ fullName: user.fullName, phone: user.phone });
+                            form.setFieldsValue({ fullName: user.fullName, phone: user.phone, gender: user.gender });
                             setPreview(user.profilePicture || null);
                             setNewImg(null);
                             setEditing(true);
@@ -411,6 +411,21 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                             <Input className="up-edit-input" prefix={<span style={{ color: "#6366f1" }}>{icon}</span>} placeholder={ph} style={inputStyle} />
                         </Form.Item>
                     ))}
+
+                    <Form.Item className="up-edit-field" name="gender"
+                        label={<span style={{ color: "#64748b", fontSize: 11 }}>Gender</span>}
+                        style={{ marginBottom: 12 }}
+                    >
+                        <Select
+                            className="up-edit-input"
+                            placeholder="Select gender"
+                            style={inputStyle}
+                            options={[
+                                { value: "M", label: "Male" },
+                                { value: "F", label: "Female" },
+                            ]}
+                        />
+                    </Form.Item>
 
                     {/* Password Section */}
                     <div className="up-password-section" style={{ borderTop: "1px solid rgba(255,255,255,0.06)", margin: "12px 0", paddingTop: 12 }}>
