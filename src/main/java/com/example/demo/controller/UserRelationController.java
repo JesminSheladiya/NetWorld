@@ -103,16 +103,16 @@ public class UserRelationController {
         return ResponseEntity.ok(userRelationService.getMyConnections(getCurrentUser(ud)));
     }
 
-    @PostMapping("/suggestions/accept")
-    public ResponseEntity<?> acceptSuggestion(
+    @PostMapping("/suggestions/send")
+    public ResponseEntity<?> sendSuggestionRequest(
             @AuthenticationPrincipal UserDetails ud,
             @RequestBody Map<String, String> body) {
-        userRelationService.acceptInferredSuggestion(
+        userRelationService.sendInferredSuggestionRequest(
                 getCurrentUser(ud),
                 body.get("otherEmail"),
                 body.get("relationName"));
         Map<String, String> resp = new HashMap<>();
-        resp.put("message", "Accepted!");
+        resp.put("message", "Request sent!");
         return ResponseEntity.ok(resp);
     }
 

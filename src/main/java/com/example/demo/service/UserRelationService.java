@@ -15,16 +15,16 @@ public class UserRelationService {
     private final UserRelationRepository userRelationRepo;
     private final UserRepository         userRepository;
     private final RelationRepository     relationRepository;
-    private final RelationInferenceRuleRepository inferenceRuleRepo;
+    private final RelationshipResolver   resolver;
 
     public UserRelationService(UserRelationRepository userRelationRepo,
                                UserRepository userRepository,
                                RelationRepository relationRepository,
-                               RelationInferenceRuleRepository inferenceRuleRepo) {
+                               RelationshipResolver resolver) {
         this.userRelationRepo   = userRelationRepo;
         this.userRepository     = userRepository;
         this.relationRepository = relationRepository;
-        this.inferenceRuleRepo  = inferenceRuleRepo;
+        this.resolver           = resolver;
     }
 
     // User manually sends a relation request
@@ -45,7 +45,7 @@ public class UserRelationService {
         userRelationRepo.save(new UserRelation(fromUser, toUser, relation, "PENDING"));
     }
 
-    // Accept a manually-sent PENDING request
+    // Accept a manually-sent or suggestion-based PENDING request
     @Transactional
     public void acceptRelation(Long id, User currentUser) {
         UserRelation ur = userRelationRepo.findById(id)
@@ -57,12 +57,13 @@ public class UserRelationService {
         ur.setStatus("ACCEPTED");
         userRelationRepo.save(ur);
 
-        Relation reverse = findReverseRelation(ur.getRelation());
+        Relation reverse = findReverseRelation(ur.getRelation(), ur.getFromUser());
         if (reverse != null && userRelationRepo.findByFromUserAndToUser(currentUser, ur.getFromUser()).isEmpty()) {
             userRelationRepo.save(new UserRelation(currentUser, ur.getFromUser(), reverse, "ACCEPTED"));
         }
 
-        generateAndStoreSuggestions(currentUser, ur.getFromUser());
+        regenerateAllSuggestions(currentUser);
+        regenerateAllSuggestions(ur.getFromUser());
     }
 
     @Transactional
@@ -77,20 +78,14 @@ public class UserRelationService {
         userRelationRepo.save(ur);
     }
 
-    // Only manually-sent requests (PENDING) — not system-generated suggestions
     public List<UserRelationSuggestionDTO> getPendingRequests(User currentUser) {
         return userRelationRepo.findByToUserAndStatus(currentUser, "PENDING")
                 .stream()
-                .filter(ur -> {
-                    // Only show if the fromUser actually sent it (not system-generated)
-                    // System suggestions are stored with status SUGGESTED
-                    return true;
-                })
                 .map(ur -> {
                     User s = ur.getFromUser();
                     String name = s.getFullName() != null ? s.getFullName() : s.getDisplayName();
                     return new UserRelationSuggestionDTO(
-                            ur.getId(), name, s.getEmail(), s.getProfilePicture(),
+                            ur.getId(), name, s.getEmail(), s.getPhone(), s.getProfilePicture(),
                             ur.getRelation().getRelationName(),
                             name + " wants to add you as their " + ur.getRelation().getRelationName(),
                             "PENDING");
@@ -103,58 +98,44 @@ public class UserRelationService {
                     User o = ur.getToUser();
                     String name = o.getFullName() != null ? o.getFullName() : o.getDisplayName();
                     return new UserRelationSuggestionDTO(
-                            ur.getId(), name, o.getEmail(), o.getProfilePicture(),
+                            ur.getId(), name, o.getEmail(), o.getPhone(), o.getProfilePicture(),
                             ur.getRelation().getRelationName(), null, "ACCEPTED");
                 }).collect(Collectors.toList());
     }
 
-    // Returns system-inferred suggestions stored with status SUGGESTED
     @Transactional
     public List<UserRelationSuggestionDTO> getInferredSuggestions(User currentUser) {
-        // First regenerate all suggestions from current ACCEPTED relations
         regenerateAllSuggestions(currentUser);
 
         return userRelationRepo.findByFromUserAndStatus(currentUser, "SUGGESTED")
                 .stream().map(ur -> {
                     User o = ur.getToUser();
                     String name = o.getFullName() != null ? o.getFullName() : o.getDisplayName();
-
-                    String reason = buildReason(currentUser, o);
-
                     return new UserRelationSuggestionDTO(
-                            ur.getId(), name, o.getEmail(), o.getProfilePicture(),
+                            ur.getId(), name, o.getEmail(), o.getPhone(), o.getProfilePicture(),
                             ur.getRelation().getRelationName(),
-                            reason,
+                            "Discovered through your network connections",
                             "SUGGESTED");
                 }).collect(Collectors.toList());
     }
 
-    // Accept a system suggestion → save as ACCEPTED
+    // Send a request based on a system suggestion → PENDING (not auto-accepted)
     @Transactional
-    public void acceptInferredSuggestion(User currentUser, String otherEmail, String relationName) {
+    public void sendInferredSuggestionRequest(User currentUser, String otherEmail, String relationName) {
         User otherUser = userRepository.findByEmail(otherEmail)
                 .orElseThrow(() -> new RuntimeException("User not found!"));
 
-        // Update existing SUGGESTED record to ACCEPTED
         Optional<UserRelation> existing = userRelationRepo.findByFromUserAndToUser(currentUser, otherUser);
         if (existing.isPresent()) {
-            existing.get().setStatus("ACCEPTED");
+            existing.get().setStatus("PENDING");
             userRelationRepo.save(existing.get());
         } else {
             Relation relation = relationRepository.findByRelationNameIgnoreCase(relationName)
                     .orElseThrow(() -> new RuntimeException("Relation not found!"));
-            userRelationRepo.save(new UserRelation(currentUser, otherUser, relation, "ACCEPTED"));
-        }
-
-        // Update reverse too
-        Optional<UserRelation> reverseExisting = userRelationRepo.findByFromUserAndToUser(otherUser, currentUser);
-        if (reverseExisting.isPresent() && "SUGGESTED".equals(reverseExisting.get().getStatus())) {
-            reverseExisting.get().setStatus("PENDING");
-            userRelationRepo.save(reverseExisting.get());
+            userRelationRepo.save(new UserRelation(currentUser, otherUser, relation, "PENDING"));
         }
     }
 
-    // Dismiss a suggestion → mark DISMISSED so it won't show again
     @Transactional
     public void dismissSuggestion(Long id, User currentUser) {
         userRelationRepo.findById(id).ifPresent(ur -> {
@@ -165,206 +146,65 @@ public class UserRelationService {
         });
     }
 
-    // Regenerate ALL suggestions for a user from scratch (cleans stale/wrong entries)
-    private void regenerateAllSuggestions(User me) {
-        // Delete all existing SUGGESTED records for this user (both directions)
-        List<UserRelation> oldSuggestions = userRelationRepo.findByFromUserAndStatus(me, "SUGGESTED");
-        oldSuggestions.addAll(userRelationRepo.findByToUserAndStatus(me, "SUGGESTED"));
-        for (UserRelation old : oldSuggestions) {
-            userRelationRepo.delete(old);
-        }
+    // Rebuild every SUGGESTED entry for 'me' from the full accepted-relations graph
+    @Transactional
+    public void regenerateAllSuggestions(User me) {
+        List<UserRelation> old = userRelationRepo.findByFromUserAndStatus(me, "SUGGESTED");
+        old.addAll(userRelationRepo.findByToUserAndStatus(me, "SUGGESTED"));
+        old.forEach(userRelationRepo::delete);
 
-        // Regenerate from every ACCEPTED connection
-        List<UserRelation> accepted = userRelationRepo.findByFromUserAndStatus(me, "ACCEPTED");
-        for (UserRelation rel : accepted) {
-            generateAndStoreSuggestions(me, rel.getToUser());
-        }
-    }
+        List<UserRelation> accepted = userRelationRepo.findByStatus("ACCEPTED");
+        RelationshipResolver.Graph graph = resolver.buildGraph(accepted);
 
-    // Auto-generate SUGGESTED entries after a new connection is accepted
-    private void generateAndStoreSuggestions(User me, User commonPerson) {
-        Map<String, String> rules = buildRulesMap();
+        if (!graph.users.containsKey(me.getId())) return;
 
-        Optional<UserRelation> myRelOpt = userRelationRepo.findByFromUserAndToUser(me, commonPerson);
-        if (myRelOpt.isEmpty()) return;
+        for (Long otherId : graph.users.keySet()) {
+            if (otherId.equals(me.getId())) continue;
+            User other = graph.users.get(otherId);
 
-        UserRelation myRel   = myRelOpt.get();
-        Relation revOfMyRel  = findReverseRelation(myRel.getRelation());
-        if (revOfMyRel == null) return;
-        String myCatRev      = revOfMyRel.getRelationCategory();
-        String myGenderRev   = revOfMyRel.getGender() != null ? revOfMyRel.getGender() : "N";
+            Optional<UserRelation> existing = userRelationRepo.findByFromUserAndToUser(me, other);
+            if (existing.isPresent() && !"SUGGESTED".equals(existing.get().getStatus())) continue;
 
-        // ── Part 1: find others connected to commonPerson ──
-        // Rule format: what I AM TO commonPerson + what other IS TO commonPerson → what I AM TO other
-        // Two cases from the query:
-        //   A) other→commonPerson: category describes commonPerson → need REVERSE for "what other IS TO commonPerson"
-        //   B) commonPerson→other: category describes other directly → use as-is for "what other IS TO commonPerson"
-        List<UserRelation> othersViaCommon = userRelationRepo.findOthersRelatedToSameUser(commonPerson, me);
-        for (UserRelation otherRel : othersViaCommon) {
-            boolean isOtherToCommon = otherRel.getToUser().equals(commonPerson);
-            User other = isOtherToCommon ? otherRel.getFromUser() : otherRel.getToUser();
+            String otherToMe = resolver.resolve(graph, me.getId(), otherId);   // other is X to me
+            String meToOther  = resolver.resolve(graph, otherId, me.getId());  // me is Y to other
+            if (otherToMe == null || meToOther == null) continue;
 
-            String otherCatRev;
-            String otherGenRev;
-            if (isOtherToCommon) {
-                // Case A: other→commonPerson e.g. "commonPerson IS Son TO other"
-                // Reverse → "other IS Father TO commonPerson"
-                Relation revOther = findReverseRelation(otherRel.getRelation());
-                if (revOther == null) continue;
-                otherCatRev = revOther.getRelationCategory();
-                otherGenRev = revOther.getGender() != null ? revOther.getGender() : "N";
-            } else {
-                // Case B: commonPerson→other e.g. "other IS Father TO commonPerson" → already correct
-                otherCatRev = otherRel.getRelation().getRelationCategory();
-                otherGenRev = otherRel.getRelation().getGender() != null ? otherRel.getRelation().getGender() : "N";
-            }
+            Optional<Relation> rel1 = relationRepository.findByRelationNameIgnoreCase(otherToMe);
+            Optional<Relation> rel2 = relationRepository.findByRelationNameIgnoreCase(meToOther);
+            if (rel1.isEmpty() || rel2.isEmpty()) continue;
 
-            String inferred = resolveRule(rules, myCatRev, myGenderRev, otherCatRev, otherGenRev);
-            if (inferred == null) continue;
-
-            Optional<Relation> rel = relationRepository.findByRelationNameIgnoreCase(inferred);
-            if (rel.isEmpty()) continue;
-
-            // If existing ACCEPTED/PENDING relation exists → skip (already connected/requested)
-            // If existing SUGGESTED → delete it so we can replace with the correct one
-            Optional<UserRelation> existingBetween = userRelationRepo.findByFromUserAndToUser(me, other);
-            if (existingBetween.isPresent()) {
-                if (!"SUGGESTED".equals(existingBetween.get().getStatus())) continue;
-                userRelationRepo.delete(existingBetween.get());
-            }
-            Optional<UserRelation> revExistingBetween = userRelationRepo.findByFromUserAndToUser(other, me);
-            if (revExistingBetween.isPresent() && "SUGGESTED".equals(revExistingBetween.get().getStatus())) {
-                userRelationRepo.delete(revExistingBetween.get());
-            }
-
-            // The inferred name is in human-readable form "A is X of B".
-            // But UserRelation stores: A→B = X means "B is X to A" (opposite direction).
-            // So we must store the REVERSE: if "A is Son of B" → store A→B = Father (B is Father to A)
-            Relation storeRel = findReverseRelation(rel.get());
-            if (storeRel == null) continue;
-
-            userRelationRepo.save(new UserRelation(me, other, storeRel, "SUGGESTED"));
-            Relation rev = findReverseRelation(storeRel);
-            if (rev != null && userRelationRepo.findByFromUserAndToUser(other, me).isEmpty()) {
-                userRelationRepo.save(new UserRelation(other, me, rev, "SUGGESTED"));
-            }
-        }
-
-        // ── Part 2: also find others connected to me (bidirectional) ──
-        // Rule format: what commonPerson IS TO me + what connection IS TO me → what commonPerson IS TO connection
-        // Two cases from the query:
-        //   A) connection→me: category describes me → need REVERSE for "what connection IS TO me"
-        //   B) me→connection: category describes connection directly → use as-is for "what connection IS TO me"
-        String myCatOrig    = myRel.getRelation().getRelationCategory();
-        String myGenderOrig = myRel.getRelation().getGender() != null ? myRel.getRelation().getGender() : "N";
-        List<UserRelation> othersViaMe = userRelationRepo.findOthersRelatedToSameUser(me, commonPerson);
-        for (UserRelation myConnectionRel : othersViaMe) {
-            boolean isConnToMe = myConnectionRel.getToUser().equals(me);
-            User myConnection = isConnToMe ? myConnectionRel.getFromUser() : myConnectionRel.getToUser();
-
-            String connCatRev;
-            String connGenRev;
-            if (isConnToMe) {
-                // Case A: connection→me e.g. "I AM Son TO connection"
-                // Reverse → "connection IS Father TO me"
-                Relation revConn = findReverseRelation(myConnectionRel.getRelation());
-                if (revConn == null) continue;
-                connCatRev = revConn.getRelationCategory();
-                connGenRev = revConn.getGender() != null ? revConn.getGender() : "N";
-            } else {
-                // Case B: me→connection e.g. "connection IS Son TO me" → already correct
-                connCatRev = myConnectionRel.getRelation().getRelationCategory();
-                connGenRev = myConnectionRel.getRelation().getGender() != null ? myConnectionRel.getRelation().getGender() : "N";
-            }
-
-            String inferred = resolveRule(rules, myCatOrig, myGenderOrig, connCatRev, connGenRev);
-            if (inferred == null) continue;
-
-            Optional<Relation> rel = relationRepository.findByRelationNameIgnoreCase(inferred);
-            if (rel.isEmpty()) continue;
-
-            // Same: delete old wrong SUGGESTED, skip ACCEPTED/PENDING
-            Optional<UserRelation> existingBetween = userRelationRepo.findByFromUserAndToUser(commonPerson, myConnection);
-            if (existingBetween.isPresent()) {
-                if (!"SUGGESTED".equals(existingBetween.get().getStatus())) continue;
-                userRelationRepo.delete(existingBetween.get());
-            }
-            Optional<UserRelation> revExistingBetween = userRelationRepo.findByFromUserAndToUser(myConnection, commonPerson);
-            if (revExistingBetween.isPresent() && "SUGGESTED".equals(revExistingBetween.get().getStatus())) {
-                userRelationRepo.delete(revExistingBetween.get());
-            }
-
-            // Same direction fix: reverse the human-readable relation name
-            Relation storeRel = findReverseRelation(rel.get());
-            if (storeRel == null) continue;
-
-            userRelationRepo.save(new UserRelation(commonPerson, myConnection, storeRel, "SUGGESTED"));
-            Relation rev = findReverseRelation(storeRel);
-            if (rev != null && userRelationRepo.findByFromUserAndToUser(myConnection, commonPerson).isEmpty()) {
-                userRelationRepo.save(new UserRelation(myConnection, commonPerson, rev, "SUGGESTED"));
+            userRelationRepo.save(new UserRelation(me, other, rel1.get(), "SUGGESTED"));
+            Optional<UserRelation> revExisting = userRelationRepo.findByFromUserAndToUser(other, me);
+            if (revExisting.isEmpty()) {
+                userRelationRepo.save(new UserRelation(other, me, rel2.get(), "SUGGESTED"));
             }
         }
     }
 
-    private String resolveRule(Map<String, String> rules, String catA, String genderA, String catB, String genderB) {
-        String inferred = rules.get(catA + "|" + genderA + "|" + catB + "|" + genderB);
-        if (inferred == null) inferred = rules.get(catA + "|" + genderA + "|" + catB + "|N");
-        if (inferred == null) inferred = rules.get(catA + "|N|" + catB + "|" + genderB);
-        if (inferred == null) inferred = rules.get(catA + "|N|" + catB + "|N");
-        return inferred;
-    }
+    private static final Map<String, String> CATEGORY_REVERSE = Map.of(
+            "PARENT", "CHILD",
+            "CHILD", "PARENT",
+            "SIBLING", "SIBLING",
+            "SPOUSE", "SPOUSE",
+            "GRANDPARENT", "GRANDCHILD",
+            "GRANDCHILD", "GRANDPARENT",
+            "INLAW", "INLAW",
+            "PIBLING", "NIBLING",
+            "NIBLING", "PIBLING",
+            "COUSIN", "COUSIN"
+    );
 
-    private String buildReason(User me, User other) {
-        List<UserRelation> myConnections = userRelationRepo.findByFromUserAndStatus(me, "ACCEPTED");
-        for (UserRelation myRel : myConnections) {
-            User common = myRel.getToUser();
-            Optional<UserRelation> otherRel = userRelationRepo.findByFromUserAndToUser(other, common);
-            if (otherRel.isPresent() && "ACCEPTED".equals(otherRel.get().getStatus())) {
-                String commonName = common.getFullName() != null ? common.getFullName() : common.getDisplayName();
-                return "Both connected to " + commonName;
-            }
-        }
-        return "People you may know";
-    }
+    // genderSource = person this reverse relation describes (ur.getFromUser())
+    private Relation findReverseRelation(Relation rel, User genderSource) {
+        if (rel == null || genderSource == null || genderSource.getGender() == null) return null;
 
-    private Map<String, String> buildRulesMap() {
-        Map<String, String> map = new HashMap<>();
-        inferenceRuleRepo.findAll().forEach(r ->
-                map.put(r.getCategoryA() + "|" + r.getGenderA()
-                                + "|" + r.getCategoryB() + "|" + r.getGenderB(),
-                        r.getInferredRelationName()));
-        return map;
-    }
+        String reverseCategory = CATEGORY_REVERSE.get(rel.getRelationCategory());
+        if (reverseCategory == null) return null;
 
-    private Relation findReverseRelation(Relation rel) {
-        if (rel == null) return null;
-        Map<String, String> mirror = new HashMap<>();
-        mirror.put("son",             "Father");
-        mirror.put("daughter",        "Father");
-        mirror.put("father",          "Son");
-        mirror.put("mother",          "Son");
-        mirror.put("brother",         "Brother");
-        mirror.put("sister",          "Sister");
-        mirror.put("grandfather",     "Grandson");
-        mirror.put("grandmother",     "Grandson");
-        mirror.put("grandson",        "Grandfather");
-        mirror.put("granddaughter",   "Grandfather");
-        mirror.put("husband",         "Wife");
-        mirror.put("wife",            "Husband");
-        mirror.put("uncle",           "Nephew");
-        mirror.put("aunt",            "Nephew");
-        mirror.put("nephew",          "Uncle");
-        mirror.put("niece",           "Uncle");
-        mirror.put("father-in-law",   "Son-in-law");
-        mirror.put("mother-in-law",   "Son-in-law");
-        mirror.put("son-in-law",      "Father-in-law");
-        mirror.put("daughter-in-law", "Father-in-law");
-        mirror.put("brother-in-law",  "Brother-in-law");
-        mirror.put("sister-in-law",   "Sister-in-law");
-        mirror.put("cousin",          "Cousin");
-        mirror.put("cousin brother", "Cousin");
-        mirror.put("cousin sister",  "Cousin");
-        String rev = mirror.get(rel.getRelationName().toLowerCase());
-        return rev == null ? null : relationRepository.findByRelationNameIgnoreCase(rev).orElse(null);
+        Integer reverseLevel = -rel.getGenerationLevel();
+
+        return relationRepository
+                .findByRelationCategoryAndGenerationLevelAndGender(reverseCategory, reverseLevel, genderSource.getGender())
+                .orElse(null);
     }
 }

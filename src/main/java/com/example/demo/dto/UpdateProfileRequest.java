@@ -6,6 +6,8 @@ public class UpdateProfileRequest {
     private String currentPassword;
     private String newPassword;
     private String profilePicture;
+    private String gender;
+
 
     public String getFullName()        { return fullName; }
     public void setFullName(String v)  { this.fullName = v; }
@@ -21,4 +23,7 @@ public class UpdateProfileRequest {
 
     public String getProfilePicture()        { return profilePicture; }
     public void   setProfilePicture(String v){ this.profilePicture = v; }
+
+    public String getGender()       { return gender; }
+    public void setGender(String v) { this.gender = v; }
 }

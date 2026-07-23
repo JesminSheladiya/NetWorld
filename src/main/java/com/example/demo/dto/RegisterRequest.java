@@ -16,6 +16,9 @@ public class RegisterRequest {
     @NotBlank @Pattern(regexp = "^[0-9]{10}$", message = "Phone must be 10 digits")
     private String phone;
 
+    @NotBlank @Pattern(regexp = "^[MF]$", message = "Gender must be M or F")
+    private String gender;
+
     private String fullName;
 
     public String getUsername() { return username; }
@@ -32,5 +35,8 @@ public class RegisterRequest {
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
 }
 
