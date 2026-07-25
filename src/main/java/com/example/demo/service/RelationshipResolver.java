@@ -9,8 +9,6 @@ import java.util.*;
 @Service
 public class RelationshipResolver {
 
-    private enum Step { UP, DOWN, SPOUSE, SIBLING }
-
     public static class Graph {
         Map<Long, Set<Long>> parentOf  = new HashMap<>();
         Map<Long, Set<Long>> childOf   = new HashMap<>();
@@ -25,32 +23,24 @@ public class RelationshipResolver {
             users.put(child.getId(), child);
             users.put(parent.getId(), parent);
         }
-
         void addSpouseEdge(User a, User b) {
             spouseOf.put(a.getId(), b.getId());
             spouseOf.put(b.getId(), a.getId());
             users.put(a.getId(), a);
             users.put(b.getId(), b);
         }
-
         void addSiblingEdge(User a, User b) {
             siblingOf.computeIfAbsent(a.getId(), k -> new HashSet<>()).add(b.getId());
             siblingOf.computeIfAbsent(b.getId(), k -> new HashSet<>()).add(a.getId());
             users.put(a.getId(), a);
             users.put(b.getId(), b);
         }
-
-        void noteGender(User person, String userGender) {
-            if (userGender != null && !"N".equals(userGender)) {
-                genderOf.put(person.getId(), userGender);
-            }
+        void noteGender(User person, String gender) {
+            if (gender != null && !"N".equals(gender)) genderOf.put(person.getId(), gender);
             users.put(person.getId(), person);
         }
     }
 
-    /** PARENT/CHILD/SPOUSE/SIBLING become real edges — everything else
-     *  (GRANDPARENT, UNCLE, COUSIN, INLAW...) is a derived label and is
-     *  never used as an edge, so it can never introduce a wrong/ambiguous path. */
     public Graph buildGraph(List<UserRelation> acceptedRelations) {
         Graph g = new Graph();
         for (UserRelation ur : acceptedRelations) {
@@ -72,82 +62,120 @@ public class RelationshipResolver {
         return g;
     }
 
-    private record Node(Long id, List<Step> path) {}
-
-    private List<Step> findPath(Graph g, Long fromId, Long toId, int maxDepth) {
-        if (fromId.equals(toId)) return null;
-
-        Queue<Node> queue = new ArrayDeque<>();
-        Set<Long> visited = new HashSet<>();
-        queue.add(new Node(fromId, new ArrayList<>()));
-        visited.add(fromId);
-
-        while (!queue.isEmpty()) {
-            Node cur = queue.poll();
-            if (cur.path().size() >= maxDepth) continue;
-
-            for (Long p : g.parentOf.getOrDefault(cur.id(), Set.of())) {
-                if (p.equals(toId)) return append(cur.path(), Step.UP);
-                if (visited.add(p)) queue.add(new Node(p, append(cur.path(), Step.UP)));
-            }
-            for (Long c : g.childOf.getOrDefault(cur.id(), Set.of())) {
-                if (c.equals(toId)) return append(cur.path(), Step.DOWN);
-                if (visited.add(c)) queue.add(new Node(c, append(cur.path(), Step.DOWN)));
-            }
-            Long sp = g.spouseOf.get(cur.id());
-            if (sp != null) {
-                if (sp.equals(toId)) return append(cur.path(), Step.SPOUSE);
-                if (visited.add(sp)) queue.add(new Node(sp, append(cur.path(), Step.SPOUSE)));
-            }
-            for (Long sib : g.siblingOf.getOrDefault(cur.id(), Set.of())) {
-                if (sib.equals(toId)) return append(cur.path(), Step.SIBLING);
-                if (visited.add(sib)) queue.add(new Node(sib, append(cur.path(), Step.SIBLING)));
+    /** Full sibling group of a person (transitive closure), always includes self. */
+    private Set<Long> siblingGroup(Graph g, Long x) {
+        Set<Long> group = new HashSet<>();
+        Deque<Long> stack = new ArrayDeque<>();
+        group.add(x);
+        stack.push(x);
+        while (!stack.isEmpty()) {
+            Long cur = stack.pop();
+            for (Long sib : g.siblingOf.getOrDefault(cur, Set.of())) {
+                if (group.add(sib)) stack.push(sib);
             }
         }
+        return group;
+    }
+
+    /** Ancestor-generation map for 'start'. At EACH level, sibling
+     *  substitution is applied only to that level's own members (fills in
+     *  missing parent records via a sibling who does have one) — it is NOT
+     *  reapplied to the accumulated result, so a cousin's parent never gets
+     *  mistaken for a shared parent. This one distinction is what keeps
+     *  Sibling vs Cousin vs Uncle/Nephew from colliding. */
+    private Map<Long, Integer> familyDistances(Graph g, Long start, int maxLevel) {
+        Map<Long, Integer> dist = new HashMap<>();
+        Set<Long> currentLevel = new HashSet<>(Set.of(start));
+
+        for (int level = 1; level <= maxLevel; level++) {
+            Set<Long> next = new HashSet<>();
+            for (Long person : currentLevel) {
+                for (Long sib : siblingGroup(g, person)) {
+                    next.addAll(g.parentOf.getOrDefault(sib, Set.of()));
+                }
+            }
+            next.removeIf(dist::containsKey);
+            if (next.isEmpty()) break;
+            for (Long p : next) dist.put(p, level);
+            currentLevel = next;
+        }
+        return dist;
+    }
+
+    private enum Type { PARENT, CHILD, GRANDPARENT, GRANDCHILD, SIBLING, COUSIN, UNCLE_AUNT, NEPHEW_NIECE }
+
+    /** Blood-relation type of 'toId' relative to 'fromId' — gender-independent. */
+    private Type bloodType(Graph g, Long fromId, Long toId) {
+        if (fromId.equals(toId)) return null;
+        if (siblingGroup(g, fromId).contains(toId)) return Type.SIBLING;
+
+        Map<Long, Integer> distFrom = familyDistances(g, fromId, 2);
+        if (distFrom.containsKey(toId)) {
+            return distFrom.get(toId) == 1 ? Type.PARENT : Type.GRANDPARENT;
+        }
+        Map<Long, Integer> distTo = familyDistances(g, toId, 2);
+        if (distTo.containsKey(fromId)) {
+            return distTo.get(fromId) == 1 ? Type.CHILD : Type.GRANDCHILD;
+        }
+
+        Integer bestSum = null; int bestA = 0, bestB = 0;
+        for (Map.Entry<Long, Integer> e : distFrom.entrySet()) {
+            Integer b = distTo.get(e.getKey());
+            if (b == null) continue;
+            int a = e.getValue();
+            int sum = a + b;
+            if (bestSum == null || sum < bestSum) { bestSum = sum; bestA = a; bestB = b; }
+        }
+        if (bestSum == null) return null;
+
+        if (bestA == bestB) return bestA == 1 ? Type.SIBLING : Type.COUSIN;
+        if (Math.abs(bestA - bestB) == 1) return bestA < bestB ? Type.NEPHEW_NIECE : Type.UNCLE_AUNT;
         return null;
     }
 
-    private List<Step> append(List<Step> path, Step s) {
-        List<Step> np = new ArrayList<>(path);
-        np.add(s);
-        return np;
+    private String label(Type type, boolean female) {
+        if (type == null) return null;
+        return switch (type) {
+            case PARENT      -> female ? "Mother" : "Father";
+            case CHILD        -> female ? "Daughter" : "Son";
+            case GRANDPARENT  -> female ? "Grandmother" : "Grandfather";
+            case GRANDCHILD   -> female ? "Granddaughter" : "Grandson";
+            case SIBLING      -> female ? "Sister" : "Brother";
+            case COUSIN       -> "Cousin";
+            case UNCLE_AUNT   -> female ? "Aunt" : "Uncle";
+            case NEPHEW_NIECE -> female ? "Niece" : "Nephew";
+        };
     }
 
+    private boolean isFemale(Graph g, Long id) {
+        return "F".equals(g.genderOf.getOrDefault(id, "N"));
+    }
+
+    /** Returns what 'toId' is to 'fromId'. */
     public String resolve(Graph g, Long fromId, Long toId) {
-        List<Step> path = findPath(g, fromId, toId, 4);
-        if (path == null || path.isEmpty()) return null;
+        if (fromId.equals(toId)) return null;
 
-        boolean f = "F".equals(g.genderOf.getOrDefault(toId, "N"));
+        if (toId.equals(g.spouseOf.get(fromId))) {
+            return isFemale(g, toId) ? "Wife" : "Husband";
+        }
 
-        String pattern = path.stream()
-                .map(s -> switch (s) { case UP -> "U"; case DOWN -> "D"; case SPOUSE -> "S"; case SIBLING -> "B"; })
-                .reduce("", String::concat);
+        Type direct = bloodType(g, fromId, toId);
+        if (direct != null) return label(direct, isFemale(g, toId));
 
-        return switch (pattern) {
-            case "U"   -> f ? "Mother" : "Father";
-            case "D"   -> f ? "Daughter" : "Son";
-            case "S"   -> f ? "Wife" : "Husband";
-            case "B"   -> f ? "Sister" : "Brother";
-            case "UU"  -> f ? "Grandmother" : "Grandfather";
-            case "DD"  -> f ? "Granddaughter" : "Grandson";
+        Long sFrom = g.spouseOf.get(fromId);
+        if (sFrom != null) {
+            Type t = bloodType(g, sFrom, toId);
+            if (t == Type.SIBLING) return isFemale(g, toId) ? "Sister-in-law" : "Brother-in-law";
+            if (t == Type.PARENT)  return isFemale(g, toId) ? "Mother-in-law" : "Father-in-law";
+        }
 
-            case "UD"  -> f ? "Sister" : "Brother";   // shared parent, other child
-            case "DU"  -> f ? "Wife" : "Husband";     // shared child, other parent
-            case "BU"  -> f ? "Mother" : "Father";     // sibling's parent = my parent
-            case "BD"  -> f ? "Niece" : "Nephew";      // sibling's child
-            case "BS"  -> f ? "Sister-in-law" : "Brother-in-law";  // sibling's spouse
-            case "SB"  -> f ? "Sister-in-law" : "Brother-in-law";  // spouse's sibling
+        Long sTo = g.spouseOf.get(toId);
+        if (sTo != null) {
+            Type t = bloodType(g, fromId, sTo);
+            if (t == Type.SIBLING) return isFemale(g, toId) ? "Sister-in-law" : "Brother-in-law";
+            if (t == Type.CHILD)   return isFemale(g, toId) ? "Daughter-in-law" : "Son-in-law";
+        }
 
-            case "SU"  -> f ? "Mother-in-law" : "Father-in-law";
-            case "DS"  -> f ? "Daughter-in-law" : "Son-in-law";
-
-            case "UUD", "UB" -> f ? "Aunt" : "Uncle";
-            case "UDD", "BDD" -> f ? "Niece" : "Nephew";
-            case "UDS", "SUD", "DUS", "BSU" -> f ? "Sister-in-law" : "Brother-in-law";
-
-            case "UUDD", "UBD" -> "Cousin";
-
-            default -> null;
-        };
+        return null;
     }
 }
