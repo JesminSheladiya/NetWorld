@@ -62,6 +62,10 @@ UPDATE relations SET relation_category = 'NIBLING'
 UPDATE relations SET relation_category = 'COUSIN'
     WHERE LOWER(relation_name) IN ('cousin','cousin brother','cousin sister') AND (relation_category = 'OTHER' OR relation_category IS NULL);
 
+INSERT INTO relations (relation_name, generation_level, gender, relation_category) VALUES ('Friend', 0, 'N', 'OTHER')
+ON CONFLICT (relation_name) DO NOTHING;
+
+
 -- =============================================
 -- SAMPLE CONTACTS
 -- =============================================

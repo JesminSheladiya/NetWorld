@@ -154,20 +154,21 @@ public class UserRelationService {
         old.forEach(userRelationRepo::delete);
 
         List<UserRelation> accepted = userRelationRepo.findByStatus("ACCEPTED");
-        RelationshipResolver.Graph graph = resolver.buildGraph(accepted);
+        Map<Long, RelationshipResolver.RelResult> resolvedMap = resolver.resolveAll(accepted, me);
 
-        if (!graph.users.containsKey(me.getId())) return;
+        List<User> allUsers = userRepository.findAll();
 
-        for (Long otherId : graph.users.keySet()) {
-            if (otherId.equals(me.getId())) continue;
-            User other = graph.users.get(otherId);
+        for (User other : allUsers) {
+            if (other.getId().equals(me.getId())) continue;
 
             Optional<UserRelation> existing = userRelationRepo.findByFromUserAndToUser(me, other);
             if (existing.isPresent() && !"SUGGESTED".equals(existing.get().getStatus())) continue;
 
-            String otherToMe = resolver.resolve(graph, me.getId(), otherId);   // other is X to me
-            String meToOther  = resolver.resolve(graph, otherId, me.getId());  // me is Y to other
-            if (otherToMe == null || meToOther == null) continue;
+            RelationshipResolver.RelResult result = resolvedMap.get(other.getId());
+            if (result == null || result.otherToMe == null || result.meToOther == null) continue;
+
+            String otherToMe = result.otherToMe;
+            String meToOther = result.meToOther;
 
             Optional<Relation> rel1 = relationRepository.findByRelationNameIgnoreCase(otherToMe);
             Optional<Relation> rel2 = relationRepository.findByRelationNameIgnoreCase(meToOther);
