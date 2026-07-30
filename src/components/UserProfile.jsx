@@ -9,6 +9,38 @@ import ImgCrop from "antd-img-crop";
 import { updateProfile, getUser } from "../Services/authService";
 import { http } from "../Services/https";
 
+// Helper to convert a relation to its inverse (e.g., father ↔ son)
+function getInverseRelation(rel) {
+    if (!rel) return rel;
+    const map = {
+        "husband": "wife",
+        "wife": "husband",
+        "father": "son",
+        "mother": "daughter",
+        "son": "father",
+        "daughter": "mother",
+        "father-in-law": "son-in-law",
+        "mother-in-law": "son-in-law",
+        "son-in-law": "father-in-law",
+        "daughter-in-law": "father-in-law",
+        "brother-in-law": "sister-in-law",
+        "sister-in-law": "brother-in-law",
+        "brother": "brother",
+        "sister": "sister",
+        "uncle": "nephew",
+        "aunt": "niece",
+        "nephew": "uncle",
+        "niece": "aunt",
+        "cousin brother": "cousin sister",
+        "cousin sister": "cousin brother",
+        "cousin": "cousin",
+        "friend": "friend",
+    };
+    const key = rel.toLowerCase();
+    return map[key] || rel;
+}
+
+
 const BASE = process.env.REACT_APP_API_URL?.replace("/api/contacts", "/api") || "http://localhost:8080/api";
 
 const COLORS = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#8b5cf6", "#ec4899"];
@@ -286,7 +318,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                             <SectionLabel>Pending Requests ({pending.length})</SectionLabel>
                             {pending.map((p, i) => (
                                 <PersonRow key={i} name={p.suggestedUserName} pic={p.suggestedUserProfilePic}
-                                    rel={p.inferredRelation} reason={p.reason}
+                                    rel={getInverseRelation(p.inferredRelation)} reason={p.reason}
                                     actions={<>
                                         <ActionBtn accept onClick={() => acceptPending(p.pendingRelationId)} />
                                         <ActionBtn onClick={() => declinePending(p.pendingRelationId)} />
