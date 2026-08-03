@@ -125,15 +125,70 @@ public class UserRelationService {
         User otherUser = userRepository.findByEmail(otherEmail)
                 .orElseThrow(() -> new RuntimeException("User not found!"));
 
+        Relation relation = getOrCreateRelation(relationName);
+
         Optional<UserRelation> existing = userRelationRepo.findByFromUserAndToUser(currentUser, otherUser);
         if (existing.isPresent()) {
-            existing.get().setStatus("PENDING");
-            userRelationRepo.save(existing.get());
+            UserRelation ur = existing.get();
+            ur.setRelation(relation);
+            ur.setStatus("PENDING");
+            userRelationRepo.save(ur);
         } else {
-            Relation relation = relationRepository.findByRelationNameIgnoreCase(relationName)
-                    .orElseThrow(() -> new RuntimeException("Relation not found!"));
             userRelationRepo.save(new UserRelation(currentUser, otherUser, relation, "PENDING"));
         }
+    }
+
+    private Relation getOrCreateRelation(String relationName) {
+        return relationRepository.findByRelationNameIgnoreCase(relationName)
+                .orElseGet(() -> {
+                    Relation newRel = new Relation();
+                    newRel.setRelationName(relationName);
+                    newRel.setRelationCategory("COUSIN");
+                    newRel.setGenerationLevel(0);
+                    
+                    String lower = relationName.toLowerCase();
+                    if (lower.contains("daughter") || lower.contains("sister") || lower.contains("mother") || lower.contains("wife") || lower.contains("aunt") || lower.contains("niece") || lower.contains("girl") || lower.contains("female")) {
+                        newRel.setGender("F");
+                    } else if (lower.contains("son") || lower.contains("brother") || lower.contains("father") || lower.contains("husband") || lower.contains("uncle") || lower.contains("nephew") || lower.contains("boy") || lower.contains("male")) {
+                        newRel.setGender("M");
+                    } else {
+                        newRel.setGender("N");
+                    }
+                    
+                    if (lower.contains("uncle") || lower.contains("aunt")) {
+                        if (lower.contains("daughter") || lower.contains("son") || lower.contains("child")) {
+                            newRel.setRelationCategory("COUSIN");
+                            newRel.setGenerationLevel(0);
+                        } else {
+                            newRel.setRelationCategory("PIBLING");
+                            newRel.setGenerationLevel(1);
+                        }
+                    } else if (lower.contains("cousin")) {
+                        newRel.setRelationCategory("COUSIN");
+                        newRel.setGenerationLevel(0);
+                    } else if (lower.contains("father") || lower.contains("mother")) {
+                        newRel.setGenerationLevel(1);
+                        newRel.setRelationCategory("PARENT");
+                    } else if (lower.contains("son") || lower.contains("daughter")) {
+                        newRel.setGenerationLevel(-1);
+                        newRel.setRelationCategory("CHILD");
+                    } else if (lower.contains("nephew") || lower.contains("niece")) {
+                        newRel.setGenerationLevel(-1);
+                        newRel.setRelationCategory("NIBLING");
+                    } else if (lower.contains("husband") || lower.contains("wife")) {
+                        newRel.setGenerationLevel(0);
+                        newRel.setRelationCategory("SPOUSE");
+                    } else if (lower.contains("brother") || lower.contains("sister")) {
+                        if (lower.contains("in-law") || lower.contains("law")) {
+                            newRel.setRelationCategory("INLAW");
+                        } else {
+                            newRel.setRelationCategory("SIBLING");
+                        }
+                        newRel.setGenerationLevel(0);
+                    }
+                    
+                    return relationRepository.save(newRel);
+                });
     }
 
     @Transactional

@@ -120,13 +120,13 @@ public class RelationshipResolver {
                         break;
                 }
                 
-                User nextUser = users.get(nextId);
-                String gender = nextUser.getGender() != null ? nextUser.getGender() : "N";
+                User nextUser = edge.getToUser();
+                String gender = (nextUser != null && nextUser.getGender() != null) ? nextUser.getGender() : "N";
                 String otherToMeStr = resolveStateName(nextV, nextMaxV, nextS, gender);
                 
                 int invV = -nextV;
                 int invMaxV = nextMaxV - nextV;
-                String meGender = me.getGender() != null ? me.getGender() : "N";
+                String meGender = (me != null && me.getGender() != null) ? me.getGender() : "N";
                 String meToOtherStr = resolveStateName(invV, invMaxV, nextS, meGender);
                 
                 results.put(nextId, new RelResult(otherToMeStr, meToOtherStr));
@@ -148,7 +148,7 @@ public class RelationshipResolver {
             if (v == 0 && maxV == 1) return m ? "Brother-in-law" : "Sister-in-law";
             if (v == 1 && maxV >= 2) return m ? "Uncle" : "Aunt";
             if (v == -1 && maxV >= 1) return m ? "Nephew" : "Niece";
-            if (v == 0 && maxV >= 2) return "Cousin";
+            if (v == 0 && maxV >= 2) return m ? "Cousin Brother" : "Cousin Sister";
             if (v >= 2 && maxV == v) return m ? "Grandfather" : "Grandmother";
             if (v <= -2 && maxV == 0) return m ? "Grandson" : "Granddaughter";
         } 
@@ -160,7 +160,7 @@ public class RelationshipResolver {
         if (v == -2 && maxV == 0) return m ? "Grandson" : "Granddaughter";
         if (v == 1 && maxV >= 2) return m ? "Uncle" : "Aunt";
         if (v == -1 && maxV >= 1) return m ? "Nephew" : "Niece";
-        if (v == 0 && maxV >= 2) return "Cousin";
+        if (v == 0 && maxV >= 2) return m ? "Cousin Brother" : "Cousin Sister";
         if (v > 2 && maxV == v) return m ? "Grandfather" : "Grandmother";
         if (v < -2 && maxV == 0) return m ? "Grandson" : "Granddaughter";
         

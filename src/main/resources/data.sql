@@ -35,7 +35,11 @@ INSERT INTO relations (relation_name, generation_level, gender, relation_categor
 ('Son-in-law',      -1,  'M', 'INLAW'),
 ('Daughter-in-law', -1,  'F', 'INLAW'),
 ('Brother-in-law',   0,  'M', 'INLAW'),
-('Sister-in-law',    0,  'F', 'INLAW')
+('Sister-in-law',    0,  'F', 'INLAW'),
+('Uncle''s Daughter', 0, 'F', 'COUSIN'),
+('Uncle''s Son',      0, 'M', 'COUSIN'),
+('Aunt''s Daughter',  0, 'F', 'COUSIN'),
+('Aunt''s Son',       0, 'M', 'COUSIN')
 ON CONFLICT (relation_name) DO UPDATE SET generation_level = EXCLUDED.generation_level, gender = EXCLUDED.gender, relation_category = EXCLUDED.relation_category;
 
 
