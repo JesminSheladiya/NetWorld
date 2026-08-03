@@ -10,34 +10,56 @@ import { updateProfile, getUser } from "../Services/authService";
 import { http } from "../Services/https";
 
 // Helper to convert a relation to its inverse (e.g., father ↔ son)
-function getInverseRelation(rel) {
+function getInverseRelation(rel, gender = "M") {
     if (!rel) return rel;
     const map = {
         "husband": "wife",
         "wife": "husband",
-        "father": "son",
-        "mother": "daughter",
-        "son": "father",
-        "daughter": "mother",
-        "father-in-law": "son-in-law",
-        "mother-in-law": "son-in-law",
+        "father": gender === "F" ? "daughter" : "son",
+        "mother": gender === "F" ? "daughter" : "son",
+        "son": gender === "F" ? "mother" : "father",
+        "daughter": gender === "F" ? "mother" : "father",
+        "father-in-law": gender === "F" ? "daughter-in-law" : "son-in-law",
+        "mother-in-law": gender === "F" ? "daughter-in-law" : "son-in-law",
         "son-in-law": "father-in-law",
         "daughter-in-law": "father-in-law",
         "brother-in-law": "sister-in-law",
         "sister-in-law": "brother-in-law",
         "brother": "brother",
         "sister": "sister",
-        "uncle": "nephew",
-        "aunt": "niece",
-        "nephew": "uncle",
-        "niece": "aunt",
+        "uncle": gender === "F" ? "niece" : "nephew",
+        "aunt": gender === "F" ? "niece" : "nephew",
+        "nephew": gender === "F" ? "aunt" : "uncle",
+        "niece": gender === "F" ? "aunt" : "uncle",
         "cousin brother": "cousin sister",
         "cousin sister": "cousin brother",
         "cousin": "cousin",
         "friend": "friend",
     };
     const key = rel.toLowerCase();
-    return map[key] || rel;
+    if (map[key]) return map[key];
+    
+    // Dynamic fallback for custom relation names
+    const isFemale = gender === "F";
+    if (key.includes("uncle") && key.includes("daughter")) {
+        return isFemale ? "Uncle's Daughter" : "Uncle's Son";
+    }
+    if (key.includes("uncle") && key.includes("son")) {
+        return isFemale ? "Uncle's Daughter" : "Uncle's Son";
+    }
+    if (key.includes("aunt") && key.includes("daughter")) {
+        return isFemale ? "Aunt's Daughter" : "Aunt's Son";
+    }
+    if (key.includes("aunt") && key.includes("son")) {
+        return isFemale ? "Aunt's Daughter" : "Aunt's Son";
+    }
+    
+    // Cousin generic dynamic
+    if (key.includes("cousin")) {
+        return isFemale ? "Cousin Sister" : "Cousin Brother";
+    }
+    
+    return rel;
 }
 
 
@@ -318,7 +340,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
                             <SectionLabel>Pending Requests ({pending.length})</SectionLabel>
                             {pending.map((p, i) => (
                                 <PersonRow key={i} name={p.suggestedUserName} pic={p.suggestedUserProfilePic}
-                                    rel={getInverseRelation(p.inferredRelation)} reason={p.reason}
+                                    rel={getInverseRelation(p.inferredRelation, user?.gender)} reason={p.reason}
                                     actions={<>
                                         <ActionBtn accept onClick={() => acceptPending(p.pendingRelationId)} />
                                         <ActionBtn onClick={() => declinePending(p.pendingRelationId)} />

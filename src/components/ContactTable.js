@@ -19,7 +19,7 @@ import {
     Avatar,
     Tabs,
 } from "antd";
-import { ArrowRightOutlined, SearchOutlined, BulbOutlined, TeamOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, SearchOutlined, BulbOutlined, TeamOutlined, EditOutlined, CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { http } from "../Services/https";
 import "./css/ContactsTable.css";
@@ -50,6 +50,10 @@ function ContactsTable() {
 
     const [userSuggestions, setUserSuggestions] = useState([]);
     const [userSuggestLoading, setUserSuggestLoading] = useState(false);
+    const [editingSuggestionEmail, setEditingSuggestionEmail] = useState(null);
+    const [editRelationValue, setEditRelationValue] = useState("");
+    const [isCustomRelation, setIsCustomRelation] = useState(false);
+    const [customRelationText, setCustomRelationText] = useState("");
 
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -142,6 +146,36 @@ function ContactsTable() {
             await http.delete(`${BASE}/user-relations/suggestions/${s.pendingRelationId}/dismiss`);
             setUserSuggestions(p => p.filter(x => x.suggestedUserEmail !== s.suggestedUserEmail));
         } catch { messageApi.error("Failed to dismiss!"); }
+    };
+
+    const handleStartEdit = (s) => {
+        setEditingSuggestionEmail(s.suggestedUserEmail);
+        const rel = s.inferredRelation || "";
+        const isPredefined = relations.some(r => r.relationName.toLowerCase() === rel.toLowerCase());
+        if (isPredefined) {
+            setEditRelationValue(rel);
+            setIsCustomRelation(false);
+            setCustomRelationText("");
+        } else {
+            setEditRelationValue("Custom");
+            setIsCustomRelation(true);
+            setCustomRelationText(rel);
+        }
+    };
+
+    const handleSaveEdit = (email) => {
+        const finalRel = isCustomRelation ? customRelationText : editRelationValue;
+        if (!finalRel || !finalRel.trim()) {
+            messageApi.warning("Relation name cannot be empty!");
+            return;
+        }
+        setUserSuggestions(prev => prev.map(x => {
+            if (x.suggestedUserEmail === email) {
+                return { ...x, inferredRelation: finalRel };
+            }
+            return x;
+        }));
+        setEditingSuggestionEmail(null);
     };
 
 
@@ -496,19 +530,67 @@ function ContactsTable() {
                                                                                 </div>
                                                                             </div>
                                                                             <div className="suggestion-card-right">
-                                                                                <span className="suggestion-rel-chip" style={{ color: rColor, background: rBg, border: `1px solid ${rBorder}` }}>
-                                                                                    {(s.inferredRelation || "").toUpperCase()}
-                                                                                </span>
-                                                                                <div className="suggestion-card-actions">
-                                                                                    <Tooltip title="Send Request">
-                                                                                        <button className="suggestion-action-btn suggestion-action-send" onClick={() => sendSuggestionRequest(s)}>
-                                                                                            <ArrowRightOutlined style={{ fontSize: 12 }} />
-                                                                                        </button>
-                                                                                    </Tooltip>
-                                                                                    <Tooltip title="Dismiss">
-                                                                                        <button className="suggestion-action-btn suggestion-action-dismiss" onClick={() => dismissUserSuggestion(s)}>✕</button>
-                                                                                    </Tooltip>
-                                                                                </div>
+                                                                                {editingSuggestionEmail === s.suggestedUserEmail ? (
+                                                                                    <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+                                                                                        <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                                                                            <Select
+                                                                                                size="small"
+                                                                                                style={{ width: 130 }}
+                                                                                                value={isCustomRelation ? "Custom" : editRelationValue}
+                                                                                                onChange={(val) => {
+                                                                                                    if (val === "Custom") {
+                                                                                                        setIsCustomRelation(true);
+                                                                                                    } else {
+                                                                                                        setIsCustomRelation(false);
+                                                                                                        setEditRelationValue(val);
+                                                                                                    }
+                                                                                                }}
+                                                                                                options={[
+                                                                                                    ...relations.map(r => ({ value: r.relationName, label: r.relationName })),
+                                                                                                    { value: "Custom", label: "Custom..." }
+                                                                                                ]}
+                                                                                            />
+                                                                                            <Button size="small" type="primary" icon={<CheckOutlined style={{ fontSize: 10 }} />} onClick={() => handleSaveEdit(s.suggestedUserEmail)} style={{ display: "flex", alignItems: "center", justifyContent: "center" }} />
+                                                                                            <Button size="small" icon={<CloseOutlined style={{ fontSize: 10 }} />} onClick={() => setEditingSuggestionEmail(null)} style={{ display: "flex", alignItems: "center", justifyContent: "center" }} />
+                                                                                        </div>
+                                                                                        {isCustomRelation && (
+                                                                                            <Input
+                                                                                                size="small"
+                                                                                                placeholder="Custom relation..."
+                                                                                                style={{ width: 130 }}
+                                                                                                value={customRelationText}
+                                                                                                onChange={e => setCustomRelationText(e.target.value)}
+                                                                                            />
+                                                                                        )}
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                                                                            <span className="suggestion-rel-chip" style={{ color: rColor, background: rBg, border: `1px solid ${rBorder}` }}>
+                                                                                                {(s.inferredRelation || "").toUpperCase()}
+                                                                                            </span>
+                                                                                            <Tooltip title="Edit Relation">
+                                                                                                <Button
+                                                                                                    size="small"
+                                                                                                    type="text"
+                                                                                                    icon={<EditOutlined style={{ color: "#64748b", fontSize: 12 }} />}
+                                                                                                    onClick={() => handleStartEdit(s)}
+                                                                                                    style={{ padding: 0, width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center" }}
+                                                                                                />
+                                                                                            </Tooltip>
+                                                                                        </div>
+                                                                                        <div className="suggestion-card-actions">
+                                                                                            <Tooltip title="Send Request">
+                                                                                                <button className="suggestion-action-btn suggestion-action-send" onClick={() => sendSuggestionRequest(s)}>
+                                                                                                    <ArrowRightOutlined style={{ fontSize: 12 }} />
+                                                                                                </button>
+                                                                                            </Tooltip>
+                                                                                            <Tooltip title="Dismiss">
+                                                                                                <button className="suggestion-action-btn suggestion-action-dismiss" onClick={() => dismissUserSuggestion(s)}>✕</button>
+                                                                                            </Tooltip>
+                                                                                        </div>
+                                                                                    </>
+                                                                                )}
                                                                             </div>
                                                                         </div>
                                                                     );
