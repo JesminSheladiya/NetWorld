@@ -41,6 +41,9 @@ public class Relation {
     public String getRelationName() {
         return relationName;
     }
+    public void setRelationName(String relationName) {
+        this.relationName = relationName;
+    }
 
     public Integer getGenerationLevel() { return generationLevel; }
     public void setGenerationLevel(Integer generationLevel) {

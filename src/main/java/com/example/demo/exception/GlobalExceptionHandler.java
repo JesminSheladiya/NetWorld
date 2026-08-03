@@ -42,7 +42,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<?> handleRuntime(RuntimeException ex) {
+        ex.printStackTrace(); // Print to console logs
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(Map.of("message", ex.getMessage()));
+                .body(Map.of(
+                    "message", ex.getMessage() != null ? ex.getMessage() : ex.toString(),
+                    "exceptionClass", ex.getClass().getName()
+                ));
     }
 }

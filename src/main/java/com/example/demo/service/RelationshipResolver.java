@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.model.Relation;
 import com.example.demo.model.User;
 import com.example.demo.model.UserRelation;
 import org.springframework.stereotype.Service;
@@ -9,145 +10,160 @@ import java.util.*;
 @Service
 public class RelationshipResolver {
 
-    private enum Step { UP, DOWN, SPOUSE, SIBLING }
-
-    public static class Graph {
-        Map<Long, Set<Long>> parentOf  = new HashMap<>();
-        Map<Long, Set<Long>> childOf   = new HashMap<>();
-        Map<Long, Long> spouseOf       = new HashMap<>();
-        Map<Long, Set<Long>> siblingOf = new HashMap<>();
-        Map<Long, String> genderOf     = new HashMap<>();
-        Map<Long, User> users          = new HashMap<>();
-
-        void addParentEdge(User child, User parent) {
-            parentOf.computeIfAbsent(child.getId(), k -> new HashSet<>()).add(parent.getId());
-            childOf.computeIfAbsent(parent.getId(), k -> new HashSet<>()).add(child.getId());
-            users.put(child.getId(), child);
-            users.put(parent.getId(), parent);
-        }
-
-        void addSpouseEdge(User a, User b) {
-            spouseOf.put(a.getId(), b.getId());
-            spouseOf.put(b.getId(), a.getId());
-            users.put(a.getId(), a);
-            users.put(b.getId(), b);
-        }
-
-        void addSiblingEdge(User a, User b) {
-            siblingOf.computeIfAbsent(a.getId(), k -> new HashSet<>()).add(b.getId());
-            siblingOf.computeIfAbsent(b.getId(), k -> new HashSet<>()).add(a.getId());
-            users.put(a.getId(), a);
-            users.put(b.getId(), b);
-        }
-
-        void noteGender(User person, String userGender) {
-            if (userGender != null && !"N".equals(userGender)) {
-                genderOf.put(person.getId(), userGender);
-            }
-            users.put(person.getId(), person);
+    private static class State {
+        Long userId;
+        int v;
+        int maxV;
+        int s;
+        
+        public State(Long userId, int v, int maxV, int s) {
+            this.userId = userId;
+            this.v = v;
+            this.maxV = maxV;
+            this.s = s;
         }
     }
 
-    /** PARENT/CHILD/SPOUSE/SIBLING become real edges — everything else
-     *  (GRANDPARENT, UNCLE, COUSIN, INLAW...) is a derived label and is
-     *  never used as an edge, so it can never introduce a wrong/ambiguous path. */
-    public Graph buildGraph(List<UserRelation> acceptedRelations) {
-        Graph g = new Graph();
+    public static class RelResult {
+        public String otherToMe;
+        public String meToOther;
+        public RelResult(String o2m, String m2o) {
+            this.otherToMe = o2m;
+            this.meToOther = m2o;
+        }
+    }
+
+    public Map<Long, RelResult> resolveAll(List<UserRelation> acceptedRelations, User me) {
+        Map<Long, RelResult> results = new HashMap<>();
+        Map<Long, List<UserRelation>> adj = new HashMap<>();
+        Map<Long, User> users = new HashMap<>();
+
         for (UserRelation ur : acceptedRelations) {
-            User from = ur.getFromUser();
-            User to   = ur.getToUser();
-            String category = ur.getRelation().getRelationCategory();
-
-            g.noteGender(to, to.getGender());
-            g.noteGender(from, from.getGender());
-
-            switch (category) {
-                case "PARENT"  -> g.addParentEdge(from, to);
-                case "CHILD"   -> g.addParentEdge(to, from);
-                case "SPOUSE"  -> g.addSpouseEdge(from, to);
-                case "SIBLING" -> g.addSiblingEdge(from, to);
-                default -> { }
-            }
+            adj.computeIfAbsent(ur.getFromUser().getId(), k -> new ArrayList<>()).add(ur);
+            users.put(ur.getFromUser().getId(), ur.getFromUser());
+            users.put(ur.getToUser().getId(), ur.getToUser());
         }
-        return g;
-    }
 
-    private record Node(Long id, List<Step> path) {}
-
-    private List<Step> findPath(Graph g, Long fromId, Long toId, int maxDepth) {
-        if (fromId.equals(toId)) return null;
-
-        Queue<Node> queue = new ArrayDeque<>();
+        Queue<State> queue = new LinkedList<>();
+        queue.add(new State(me.getId(), 0, 0, 0));
+        
         Set<Long> visited = new HashSet<>();
-        queue.add(new Node(fromId, new ArrayList<>()));
-        visited.add(fromId);
+        visited.add(me.getId());
 
         while (!queue.isEmpty()) {
-            Node cur = queue.poll();
-            if (cur.path().size() >= maxDepth) continue;
-
-            for (Long p : g.parentOf.getOrDefault(cur.id(), Set.of())) {
-                if (p.equals(toId)) return append(cur.path(), Step.UP);
-                if (visited.add(p)) queue.add(new Node(p, append(cur.path(), Step.UP)));
-            }
-            for (Long c : g.childOf.getOrDefault(cur.id(), Set.of())) {
-                if (c.equals(toId)) return append(cur.path(), Step.DOWN);
-                if (visited.add(c)) queue.add(new Node(c, append(cur.path(), Step.DOWN)));
-            }
-            Long sp = g.spouseOf.get(cur.id());
-            if (sp != null) {
-                if (sp.equals(toId)) return append(cur.path(), Step.SPOUSE);
-                if (visited.add(sp)) queue.add(new Node(sp, append(cur.path(), Step.SPOUSE)));
-            }
-            for (Long sib : g.siblingOf.getOrDefault(cur.id(), Set.of())) {
-                if (sib.equals(toId)) return append(cur.path(), Step.SIBLING);
-                if (visited.add(sib)) queue.add(new Node(sib, append(cur.path(), Step.SIBLING)));
+            State curr = queue.poll();
+            
+            for (UserRelation edge : adj.getOrDefault(curr.userId, Collections.emptyList())) {
+                Long nextId = edge.getToUser().getId();
+                if (visited.contains(nextId)) continue;
+                visited.add(nextId);
+                
+                Relation rel = edge.getRelation();
+                String cat = rel.getRelationCategory() != null ? rel.getRelationCategory() : "OTHER";
+                
+                int nextV = curr.v;
+                int nextMaxV = curr.maxV;
+                int nextS = curr.s;
+                
+                switch (cat.toUpperCase()) {
+                    case "PARENT": 
+                        nextV += 1; nextMaxV = Math.max(nextMaxV, nextV); 
+                        if (nextS == 2) nextS = 1;
+                        break;
+                    case "CHILD": 
+                        nextV -= 1; 
+                        if (nextS == 2) nextS = 0;
+                        break;
+                    case "SIBLING": 
+                        nextMaxV = Math.max(nextMaxV, nextV + 1); 
+                        if (nextS == 2) nextS = 1;
+                        break;
+                    case "SPOUSE": 
+                        if (nextS == 0) {
+                            if (nextV == 0 && nextMaxV == 0) nextS = 2; // Direct Spouse
+                            else if (nextV < 0 || (nextV == 0 && nextMaxV > 0)) nextS = 1; // In-Law
+                            // if nextV > 0, spouse is absorbed (stepparent -> parent)
+                        }
+                        break;
+                    case "GRANDPARENT": 
+                        nextV += 2; nextMaxV = Math.max(nextMaxV, nextV); 
+                        if (nextS == 2) nextS = 1;
+                        break;
+                    case "GRANDCHILD": 
+                        nextV -= 2; 
+                        if (nextS == 2) nextS = 0;
+                        break;
+                    case "PIBLING": // Uncle/Aunt
+                        nextV += 1; nextMaxV = Math.max(nextMaxV, nextV + 1); 
+                        if (nextS == 2) nextS = 1;
+                        break;
+                    case "NIBLING": // Nephew/Niece
+                        nextV -= 1; nextMaxV = Math.max(nextMaxV, nextV + 1); 
+                        if (nextS == 2) nextS = 1;
+                        break;
+                    case "COUSIN": 
+                        nextMaxV = Math.max(nextMaxV, nextV + 2); 
+                        if (nextS == 2) nextS = 1;
+                        break;
+                    case "INLAW":
+                        int genInLaw = rel.getGenerationLevel() != null ? rel.getGenerationLevel() : 0;
+                        nextV += genInLaw;
+                        if (genInLaw > 0) nextMaxV = Math.max(nextMaxV, nextV);
+                        else if (genInLaw == 0) nextMaxV = Math.max(nextMaxV, nextV + 1);
+                        nextS = 1;
+                        break;
+                    default:
+                        int g = rel.getGenerationLevel() != null ? rel.getGenerationLevel() : 0;
+                        nextV += g;
+                        if (g > 0) nextMaxV = Math.max(nextMaxV, nextV);
+                        else if (g == 0) nextMaxV = Math.max(nextMaxV, nextV + 1);
+                        break;
+                }
+                
+                User nextUser = edge.getToUser();
+                String gender = (nextUser != null && nextUser.getGender() != null) ? nextUser.getGender() : "N";
+                String otherToMeStr = resolveStateName(nextV, nextMaxV, nextS, gender);
+                
+                int invV = -nextV;
+                int invMaxV = nextMaxV - nextV;
+                String meGender = (me != null && me.getGender() != null) ? me.getGender() : "N";
+                String meToOtherStr = resolveStateName(invV, invMaxV, nextS, meGender);
+                
+                results.put(nextId, new RelResult(otherToMeStr, meToOtherStr));
+                queue.add(new State(nextId, nextV, nextMaxV, nextS));
             }
         }
+        
+        return results;
+    }
+
+    private String resolveStateName(int v, int maxV, int s, String gender) {
+        boolean m = "M".equals(gender);
+        if (s == 2) {
+            return m ? "Husband" : "Wife";
+        }
+        if (s == 1) {
+            if (v == 1 && maxV == 1) return m ? "Father-in-law" : "Mother-in-law";
+            if (v == -1 && maxV == 0) return m ? "Son-in-law" : "Daughter-in-law";
+            if (v == 0 && maxV == 1) return m ? "Brother-in-law" : "Sister-in-law";
+            if (v == 1 && maxV >= 2) return m ? "Uncle" : "Aunt";
+            if (v == -1 && maxV >= 1) return m ? "Nephew" : "Niece";
+            if (v == 0 && maxV >= 2) return m ? "Cousin Brother" : "Cousin Sister";
+            if (v >= 2 && maxV == v) return m ? "Grandfather" : "Grandmother";
+            if (v <= -2 && maxV == 0) return m ? "Grandson" : "Granddaughter";
+        } 
+        
+        if (v == 1 && maxV == 1) return m ? "Father" : "Mother";
+        if (v == -1 && maxV == 0) return m ? "Son" : "Daughter";
+        if (v == 0 && maxV == 1) return m ? "Brother" : "Sister";
+        if (v == 2 && maxV == 2) return m ? "Grandfather" : "Grandmother";
+        if (v == -2 && maxV == 0) return m ? "Grandson" : "Granddaughter";
+        if (v == 1 && maxV >= 2) return m ? "Uncle" : "Aunt";
+        if (v == -1 && maxV >= 1) return m ? "Nephew" : "Niece";
+        if (v == 0 && maxV >= 2) return m ? "Cousin Brother" : "Cousin Sister";
+        if (v > 2 && maxV == v) return m ? "Grandfather" : "Grandmother";
+        if (v < -2 && maxV == 0) return m ? "Grandson" : "Granddaughter";
+        
         return null;
     }
-
-    private List<Step> append(List<Step> path, Step s) {
-        List<Step> np = new ArrayList<>(path);
-        np.add(s);
-        return np;
-    }
-
-    public String resolve(Graph g, Long fromId, Long toId) {
-        List<Step> path = findPath(g, fromId, toId, 4);
-        if (path == null || path.isEmpty()) return null;
-
-        boolean f = "F".equals(g.genderOf.getOrDefault(toId, "N"));
-
-        String pattern = path.stream()
-                .map(s -> switch (s) { case UP -> "U"; case DOWN -> "D"; case SPOUSE -> "S"; case SIBLING -> "B"; })
-                .reduce("", String::concat);
-
-        return switch (pattern) {
-            case "U"   -> f ? "Mother" : "Father";
-            case "D"   -> f ? "Daughter" : "Son";
-            case "S"   -> f ? "Wife" : "Husband";
-            case "B"   -> f ? "Sister" : "Brother";
-            case "UU"  -> f ? "Grandmother" : "Grandfather";
-            case "DD"  -> f ? "Granddaughter" : "Grandson";
-
-            case "UD"  -> f ? "Sister" : "Brother";   // shared parent, other child
-            case "DU"  -> f ? "Wife" : "Husband";     // shared child, other parent
-            case "BU"  -> f ? "Mother" : "Father";     // sibling's parent = my parent
-            case "BD"  -> f ? "Niece" : "Nephew";      // sibling's child
-            case "BS"  -> f ? "Sister-in-law" : "Brother-in-law";  // sibling's spouse
-            case "SB"  -> f ? "Sister-in-law" : "Brother-in-law";  // spouse's sibling
-
-            case "SU"  -> f ? "Mother-in-law" : "Father-in-law";
-            case "DS"  -> f ? "Daughter-in-law" : "Son-in-law";
-
-            case "UUD", "UB" -> f ? "Aunt" : "Uncle";
-            case "UDD", "BDD" -> f ? "Niece" : "Nephew";
-            case "UDS", "SUD", "DUS", "BSU" -> f ? "Sister-in-law" : "Brother-in-law";
-
-            case "UUDD", "UBD" -> "Cousin";
-
-            default -> null;
-        };
-    }
-}
+}
