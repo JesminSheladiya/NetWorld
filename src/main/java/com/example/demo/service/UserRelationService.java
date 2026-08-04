@@ -86,6 +86,7 @@ public class UserRelationService {
                     String name = s.getFullName() != null ? s.getFullName() : s.getDisplayName();
                     return new UserRelationSuggestionDTO(
                             ur.getId(), name, s.getEmail(), s.getPhone(), s.getProfilePicture(),
+                            s.getGender(),
                             ur.getRelation().getRelationName(),
                             name + " wants to add you as their " + ur.getRelation().getRelationName(),
                             "PENDING");
@@ -99,6 +100,7 @@ public class UserRelationService {
                     String name = o.getFullName() != null ? o.getFullName() : o.getDisplayName();
                     return new UserRelationSuggestionDTO(
                             ur.getId(), name, o.getEmail(), o.getPhone(), o.getProfilePicture(),
+                            o.getGender(),
                             ur.getRelation().getRelationName(), null, "ACCEPTED");
                 }).collect(Collectors.toList());
     }
@@ -113,6 +115,7 @@ public class UserRelationService {
                     String name = o.getFullName() != null ? o.getFullName() : o.getDisplayName();
                     return new UserRelationSuggestionDTO(
                             ur.getId(), name, o.getEmail(), o.getPhone(), o.getProfilePicture(),
+                            o.getGender(),
                             ur.getRelation().getRelationName(),
                             "Discovered through your network connections",
                             "SUGGESTED");
@@ -145,7 +148,7 @@ public class UserRelationService {
                     newRel.setRelationName(relationName);
                     newRel.setRelationCategory("COUSIN");
                     newRel.setGenerationLevel(0);
-                    
+
                     String lower = relationName.toLowerCase();
                     if (lower.contains("daughter") || lower.contains("sister") || lower.contains("mother") || lower.contains("wife") || lower.contains("aunt") || lower.contains("niece") || lower.contains("girl") || lower.contains("female")) {
                         newRel.setGender("F");
@@ -154,7 +157,7 @@ public class UserRelationService {
                     } else {
                         newRel.setGender("N");
                     }
-                    
+
                     if (lower.contains("uncle") || lower.contains("aunt")) {
                         if (lower.contains("daughter") || lower.contains("son") || lower.contains("child")) {
                             newRel.setRelationCategory("COUSIN");
@@ -186,7 +189,7 @@ public class UserRelationService {
                         }
                         newRel.setGenerationLevel(0);
                     }
-                    
+
                     return relationRepository.save(newRel);
                 });
     }
@@ -219,6 +222,9 @@ public class UserRelationService {
             Optional<UserRelation> existing = userRelationRepo.findByFromUserAndToUser(me, other);
             if (existing.isPresent() && !"SUGGESTED".equals(existing.get().getStatus())) continue;
 
+            Optional<UserRelation> reverseExisting = userRelationRepo.findByFromUserAndToUser(other, me);
+            if (reverseExisting.isPresent() && !"SUGGESTED".equals(reverseExisting.get().getStatus())) continue;
+
             RelationshipResolver.RelResult result = resolvedMap.get(other.getId());
             if (result == null || result.otherToMe == null || result.meToOther == null) continue;
 
@@ -230,8 +236,7 @@ public class UserRelationService {
             if (rel1.isEmpty() || rel2.isEmpty()) continue;
 
             userRelationRepo.save(new UserRelation(me, other, rel1.get(), "SUGGESTED"));
-            Optional<UserRelation> revExisting = userRelationRepo.findByFromUserAndToUser(other, me);
-            if (revExisting.isEmpty()) {
+            if (reverseExisting.isEmpty()) {
                 userRelationRepo.save(new UserRelation(other, me, rel2.get(), "SUGGESTED"));
             }
         }

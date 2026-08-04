@@ -8,6 +8,7 @@ public class UserRelationSuggestionDTO {
     private String suggestedUserEmail;
     private String suggestedUserPhone;
     private String suggestedUserProfilePic;
+    private String suggestedUserGender;
     private String inferredRelation;
     private String reason;
     private String status;
@@ -19,6 +20,7 @@ public class UserRelationSuggestionDTO {
                                      String suggestedUserEmail,
                                      String suggestedUserPhone,
                                      String suggestedUserProfilePic,
+                                     String suggestedUserGender,
                                      String inferredRelation,
                                      String reason,
                                      String status) {
@@ -27,6 +29,7 @@ public class UserRelationSuggestionDTO {
         this.suggestedUserEmail     = suggestedUserEmail;
         this.suggestedUserPhone     = suggestedUserPhone;
         this.suggestedUserProfilePic = suggestedUserProfilePic;
+        this.suggestedUserGender    = suggestedUserGender;
         this.inferredRelation       = inferredRelation;
         this.reason                 = reason;
         this.status                 = status;
@@ -37,6 +40,7 @@ public class UserRelationSuggestionDTO {
     public String getSuggestedUserEmail()      { return suggestedUserEmail; }
     public String getSuggestedUserPhone()      { return suggestedUserPhone; }
     public String getSuggestedUserProfilePic() { return suggestedUserProfilePic; }
+    public String getSuggestedUserGender()     { return suggestedUserGender; }
     public String getInferredRelation()        { return inferredRelation; }
     public String getReason()                  { return reason; }
     public String getStatus()                  { return status; }
