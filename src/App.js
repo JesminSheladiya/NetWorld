@@ -13,6 +13,7 @@ function App() {
   const [currentForm, setCurrentForm] = useState('login');
   const [profileOpen, setProfileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [currentUser, setCurrentUser] = useState(getUser());
   const fullName = currentUser?.fullName || currentUser?.username || 'User';
   const nameParts = fullName.split(' ').filter(Boolean);
@@ -165,12 +166,16 @@ function App() {
               </Dropdown>
             </div>
 
-            <ContactsTable />
+            <ContactsTable refreshTrigger={refreshTrigger} />
 
             <UserProfile
               open={profileOpen}
               onClose={() => setProfileOpen(false)}
               onProfileUpdate={handleProfileUpdate}
+              onRelationAccepted={() => {
+                  setRefreshTrigger(prev => prev + 1);
+                  setProfileOpen(false);
+              }}
             />
           </>
         ) : currentForm === 'login' ? (

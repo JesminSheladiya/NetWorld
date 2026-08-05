@@ -10,7 +10,7 @@ import { updateProfile, getUser } from "../Services/authService";
 import { http } from "../Services/https";
 
 // Helper to convert a relation to its inverse (e.g., father ↔ son)
-function getInverseRelation(rel, gender = "M") {
+export function getInverseRelation(rel, gender = "M") {
     if (!rel) return rel;
     const map = {
         "husband": "wife",
@@ -173,7 +173,7 @@ const inputStyle = {
     color: "#f8fafc", height: 40, borderRadius: 8, fontSize: 13,
 };
 
-function UserProfile({ open, onClose, onProfileUpdate }) {
+function UserProfile({ open, onClose, onProfileUpdate, onRelationAccepted }) {
     const user = getUser();
 
     const [editing, setEditing] = useState(false);
@@ -182,24 +182,9 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
     const [preview, setPreview] = useState(user.profilePicture || null);
     const [newImg, setNewImg] = useState(null);
 
-    const [pending, setPending] = useState([]);
-    const [loading, setLoading] = useState(false);
-
     useEffect(() => {
-        if (open) { fetchPending(); }
+        // Nothing here for now
     }, [open]);
-
-    const fetchPending = async () => {
-        setLoading(true);
-        try {
-            const p = await http.get(`${BASE}/user-relations/pending`);
-            setPending(p.data);
-        } catch { message.error("Failed to load!"); }
-        finally { setLoading(false); }
-    };
-
-    const acceptPending = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/accept`); fetchPending(); } catch { message.error("Failed!"); } };
-    const declinePending = async (id) => { try { await http.post(`${BASE}/user-relations/${id}/decline`); fetchPending(); } catch { message.error("Failed!"); } };
 
     const save = async (values) => {
         setSaving(true);
@@ -292,7 +277,7 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
 
                     {/* Stats */}
                     <div className="up-stats-row" style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-                        <StatBadge count={pending.length} label="Requests" color="#f59e0b" />
+                        <StatBadge count={0} label="Requests" color="#f59e0b" />
                     </div>
 
                     <Button
@@ -317,41 +302,6 @@ function UserProfile({ open, onClose, onProfileUpdate }) {
             ),
         },
 
-        /* ── REQUESTS TAB ── */
-        {
-            key: "requests",
-            label: (
-                <span className="up-tab-label-requests" style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <BellOutlined style={{ fontSize: 12 }} />
-                    Requests
-                    {pending.length > 0 && (
-                        <span className="up-tab-badge" style={{
-                            background: "#f59e0b", color: "#000", borderRadius: 20,
-                            padding: "0 6px", fontSize: 9, fontWeight: 700, lineHeight: "16px",
-                        }}>{pending.length}</span>
-                    )}
-                </span>
-            ),
-            children: (
-                <Spin className="up-spin" spinning={loading}>
-                    {pending.length === 0 && !loading
-                        ? <EmptyState icon="🔔" text="No pending requests" />
-                        : <>
-                            <SectionLabel>Pending Requests ({pending.length})</SectionLabel>
-                            {pending.map((p, i) => (
-                                <PersonRow key={i} name={p.suggestedUserName} pic={p.suggestedUserProfilePic}
-                                    rel={getInverseRelation(p.inferredRelation, user?.gender)} reason={p.reason}
-                                    actions={<>
-                                        <ActionBtn accept onClick={() => acceptPending(p.pendingRelationId)} />
-                                        <ActionBtn onClick={() => declinePending(p.pendingRelationId)} />
-                                    </>}
-                                />
-                            ))}
-                        </>
-                    }
-                </Spin>
-            ),
-        },
 
     ];
 

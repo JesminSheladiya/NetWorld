@@ -19,14 +19,15 @@ import {
     Avatar,
     Tabs,
 } from "antd";
-import { ArrowRightOutlined, SearchOutlined, BulbOutlined, TeamOutlined, EditOutlined, CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { BellOutlined, ArrowRightOutlined, SearchOutlined, BulbOutlined, TeamOutlined, EditOutlined, CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { http } from "../Services/https";
 import "./css/ContactsTable.css";
+import { getInverseRelation } from "./UserProfile";
 
 const { Content } = Layout;
 
-function ContactsTable() {
+function ContactsTable({ refreshTrigger }) {
     const [dataSource, setDataSource] = useState([]);
     const [connections, setConnections] = useState([]);
     const [relations, setRelations] = useState([]);
@@ -55,6 +56,9 @@ function ContactsTable() {
     const [isCustomRelation, setIsCustomRelation] = useState(false);
     const [customRelationText, setCustomRelationText] = useState("");
 
+    const [pending, setPending] = useState([]);
+    const [pendingLoading, setPendingLoading] = useState(false);
+
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -63,7 +67,9 @@ function ContactsTable() {
         }
         fetchConnections();
         fetchRelations();
-    }, []);
+        fetchUserSuggestions();
+        fetchPending();
+    }, [refreshTrigger]);
 
     const fetchConnections = async () => {
         setLoading(true);
@@ -129,6 +135,36 @@ function ContactsTable() {
             setUserSuggestions(res.data);
         } catch { messageApi.error("Failed to load suggestions!"); }
         finally { setUserSuggestLoading(false); }
+    };
+
+    const fetchPending = async () => {
+        setPendingLoading(true);
+        try {
+            const p = await http.get(`${BASE}/user-relations/pending`);
+            setPending(p.data);
+        } catch { messageApi.error("Failed to load pending requests!"); }
+        finally { setPendingLoading(false); }
+    };
+
+    const acceptPending = async (id) => { 
+        try { 
+            await http.post(`${BASE}/user-relations/${id}/accept`); 
+            messageApi.success("Relation accepted!");
+            fetchPending(); 
+            fetchConnections();
+            fetchUserSuggestions();
+        } catch { 
+            messageApi.error("Failed!"); 
+        } 
+    };
+
+    const declinePending = async (id) => { 
+        try { 
+            await http.post(`${BASE}/user-relations/${id}/decline`); 
+            fetchPending(); 
+        } catch { 
+            messageApi.error("Failed!"); 
+        } 
     };
 
     const sendSuggestionRequest = async (s) => {
@@ -462,6 +498,94 @@ function ContactsTable() {
                                                                         </div>
                                                                     </div>
                                                                 ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            },
+                                            {
+                                                key: "pending",
+                                                label: (
+                                                    <span className="discovery-tab-label">
+                                                        <BellOutlined style={{ fontSize: 12 }} /> Pending Requests
+                                                        {pending.length > 0 && (
+                                                            <span className="discovery-badge discovery-badge-indigo">{pending.length}</span>
+                                                        )}
+                                                    </span>
+                                                ),
+                                                children: (
+                                                    <div className="suggestions-tab-content">
+                                                        <div className="suggestions-tab-header">
+                                                            <div>
+                                                                <div className="suggestions-tab-title">Pending Requests</div>
+                                                                <div className="suggestions-tab-subtitle">People who want to connect with you</div>
+                                                            </div>
+                                                            <Button
+                                                                className="discovery-refresh-btn"
+                                                                size="small"
+                                                                type="text"
+                                                                loading={pendingLoading}
+                                                                onClick={fetchPending}
+                                                            >
+                                                                Refresh
+                                                            </Button>
+                                                        </div>
+
+                                                        {pendingLoading ? (
+                                                            <div className="suggestions-loading"><Spin size="small" style={{ marginRight: 8 }} /> Loading...</div>
+                                                        ) : pending.length === 0 ? (
+                                                            <div className="suggestions-empty">
+                                                                <div className="suggestions-empty-icon">🔔</div>
+                                                                <div className="suggestions-empty-text">No pending requests</div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="suggestion-cards-list">
+                                                                {pending.map((p, i) => {
+                                                                    const rel = getInverseRelation(p.inferredRelation, p.suggestedUserGender)?.toLowerCase() || "";
+                                                                    let rColor = "#38bdf8", rBg = "rgba(56,189,248,0.1)", rBorder = "rgba(56,189,248,0.25)";
+                                                                    if (rel.includes("brother") || rel.includes("sister")) { rColor = "#60a5fa"; rBg = "rgba(96,165,250,0.1)"; rBorder = "rgba(96,165,250,0.25)"; }
+                                                                    else if (rel.includes("father") || rel.includes("mother")) { rColor = "#818cf8"; rBg = "rgba(129,140,248,0.1)"; rBorder = "rgba(129,140,248,0.25)"; }
+                                                                    else if (rel.includes("son") || rel.includes("daughter")) { rColor = "#34d399"; rBg = "rgba(52,211,153,0.1)"; rBorder = "rgba(52,211,153,0.25)"; }
+
+                                                                    const COLORS = ["#3b82f6", "#38bdf8", "#0ea5e9", "#10b981", "#f59e0b"];
+                                                                    const avColor = COLORS[((p.suggestedUserName || "").charCodeAt(0) || 0) % COLORS.length];
+
+                                                                    return (
+                                                                        <div className="suggestion-card" key={i}>
+                                                                            <div className="suggestion-card-left">
+                                                                                <div className="suggestion-card-avatar" style={{ background: avColor }}>
+                                                                                    {(p.suggestedUserName || "?").charAt(0).toUpperCase()}
+                                                                                </div>
+                                                                                <div className="suggestion-card-info">
+                                                                                    <div className="suggestion-card-name">{p.suggestedUserName}</div>
+                                                                                    <div className="suggestion-card-email">{p.suggestedUserEmail}</div>
+                                                                                    <div className="suggestion-card-reason">
+                                                                                        <span>{p.reason}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="suggestion-card-right">
+                                                                                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                                                                    <span className="suggestion-rel-chip" style={{ color: rColor, background: rBg, border: `1px solid ${rBorder}` }}>
+                                                                                        {(rel || "").toUpperCase()}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <div className="suggestion-card-actions">
+                                                                                    <Tooltip title="Accept Request">
+                                                                                        <button className="suggestion-action-btn" style={{ color: "#10b981", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)" }} onClick={() => acceptPending(p.pendingRelationId)}>
+                                                                                            <CheckOutlined style={{ fontSize: 12 }} />
+                                                                                        </button>
+                                                                                    </Tooltip>
+                                                                                    <Tooltip title="Decline Request">
+                                                                                        <button className="suggestion-action-btn" style={{ color: "#ef4444", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)" }} onClick={() => declinePending(p.pendingRelationId)}>
+                                                                                        <CloseOutlined style={{ fontSize: 12 }} />
+                                                                                        </button>
+                                                                                    </Tooltip>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    );
+                                                                })}
                                                             </div>
                                                         )}
                                                     </div>
