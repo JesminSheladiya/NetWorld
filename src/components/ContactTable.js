@@ -65,16 +65,24 @@ function ContactsTable({ refreshTrigger }) {
             messageApi.error("Please login first!");
             return;
         }
-        fetchConnections();
         fetchRelations();
         fetchUserSuggestions();
         fetchPending();
     }, [refreshTrigger]);
 
-    const fetchConnections = async () => {
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            fetchConnections(searchText);
+        }, 400);
+        return () => clearTimeout(handler);
+    }, [searchText, refreshTrigger]);
+
+    const fetchConnections = async (search = "") => {
         setLoading(true);
         try {
-            const response = await http.get(`${BASE}/user-relations/connections`);
+            const response = await http.get(`${BASE}/user-relations/connections`, {
+                params: search.trim() ? { query: search.trim() } : {},
+            });
             const mapped = response.data.map((item, idx) => ({
                 key: idx,
                 name: item.suggestedUserName || "",
@@ -217,20 +225,7 @@ function ContactsTable({ refreshTrigger }) {
 
 
 
-    const filteredData = dataSource.filter((item) => {
-        const text = searchText.toLowerCase();
-
-        const relationName = typeof item.relation === 'string'
-            ? item.relation
-            : (item.relation?.relationName || item.relation || '');
-
-        return (
-            (item.name || '').toLowerCase().includes(text) ||
-            (item.phone || '').toLowerCase().includes(text) ||
-            (item.email || '').toLowerCase().includes(text) ||
-            relationName.toLowerCase().includes(text)
-        );
-    });
+    const filteredData = dataSource;
 
 
     const columns = [
@@ -468,7 +463,25 @@ function ContactsTable({ refreshTrigger }) {
                                                                             <div className="discovery-row-email">{u.email}</div>
                                                                         </div>
                                                                         <div className="discovery-row-actions">
-                                                                            {sentMap[u.email] ? (
+                                                                            {u.relationName ? (
+                                                                                <span
+                                                                                    className="discovery-rel-chip"
+                                                                                    style={{
+                                                                                        color: "#10b981",
+                                                                                        background: "rgba(16,185,129,0.1)",
+                                                                                        borderColor: "rgba(16,185,129,0.3)",
+                                                                                    }}
+                                                                                >
+                                                                                    {u.relationName.charAt(0).toUpperCase() + u.relationName.slice(1).toLowerCase()}
+                                                                                </span>
+                                                                            ) : u.pending === "received" ? (
+                                                                                <span
+                                                                                    className="discovery-sent-badge"
+                                                                                    style={{ color: "#f59e0b", background: "rgba(245,158,11,0.1)", borderColor: "rgba(245,158,11,0.3)" }}
+                                                                                >
+                                                                                    Request Received
+                                                                                </span>
+                                                                            ) : u.pending === "sent" || sentMap[u.email] ? (
                                                                                 <span className="discovery-sent-badge">✓ Sent</span>
                                                                             ) : (
                                                                                 <>
