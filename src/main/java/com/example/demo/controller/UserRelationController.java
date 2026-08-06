@@ -2,6 +2,8 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.UserRelationSuggestionDTO;
 import com.example.demo.model.User;
+import com.example.demo.model.UserRelation;
+import com.example.demo.repository.UserRelationRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.UserRelationService;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
@@ -21,11 +24,14 @@ public class UserRelationController {
 
     private final UserRelationService userRelationService;
     private final UserRepository      userRepository;
+    private final UserRelationRepository userRelationRepository;
 
     public UserRelationController(UserRelationService userRelationService,
-                                  UserRepository userRepository) {
-        this.userRelationService = userRelationService;
-        this.userRepository      = userRepository;
+                                  UserRepository userRepository,
+                                  UserRelationRepository userRelationRepository) {
+        this.userRelationService      = userRelationService;
+        this.userRepository           = userRepository;
+        this.userRelationRepository   = userRelationRepository;
     }
 
     private User getCurrentUser(UserDetails ud) {
@@ -46,6 +52,22 @@ public class UserRelationController {
             item.put("name",       u.getFullName() != null ? u.getFullName() : u.getDisplayName());
             item.put("email",      u.getEmail());
             item.put("profilePic", u.getProfilePicture() != null ? u.getProfilePicture() : "");
+
+            Optional<UserRelation> fwd = userRelationRepository.findByFromUserAndToUser(me, u);
+            Optional<UserRelation> rev = userRelationRepository.findByFromUserAndToUser(u, me);
+            if (fwd.isPresent()) {
+                if ("ACCEPTED".equals(fwd.get().getStatus())) {
+                    item.put("relationName", fwd.get().getRelation().getRelationName());
+                } else {
+                    item.put("pending", "sent");
+                }
+            } else if (rev.isPresent()) {
+                if ("ACCEPTED".equals(rev.get().getStatus())) {
+                    item.put("relationName", rev.get().getRelation().getRelationName());
+                } else {
+                    item.put("pending", "received");
+                }
+            }
             result.add(item);
         }
         return ResponseEntity.ok(result);
@@ -99,8 +121,9 @@ public class UserRelationController {
 
     @GetMapping("/connections")
     public ResponseEntity<List<UserRelationSuggestionDTO>> getConnections(
+            @RequestParam(required = false) String query,
             @AuthenticationPrincipal UserDetails ud) {
-        return ResponseEntity.ok(userRelationService.getMyConnections(getCurrentUser(ud)));
+        return ResponseEntity.ok(userRelationService.getMyConnections(getCurrentUser(ud), query));
     }
 
     @PostMapping("/suggestions/send")

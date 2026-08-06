@@ -93,16 +93,19 @@ public class UserRelationService {
                 }).collect(Collectors.toList());
     }
 
-    public List<UserRelationSuggestionDTO> getMyConnections(User currentUser) {
-        return userRelationRepo.findByFromUserAndStatus(currentUser, "ACCEPTED")
-                .stream().map(ur -> {
-                    User o = ur.getToUser();
-                    String name = o.getFullName() != null ? o.getFullName() : o.getDisplayName();
-                    return new UserRelationSuggestionDTO(
-                            ur.getId(), name, o.getEmail(), o.getPhone(), o.getProfilePicture(),
-                            o.getGender(),
-                            ur.getRelation().getRelationName(), null, "ACCEPTED");
-                }).collect(Collectors.toList());
+    public List<UserRelationSuggestionDTO> getMyConnections(User currentUser, String query) {
+        List<UserRelation> relations = (query == null || query.isBlank())
+                ? userRelationRepo.findByFromUserAndStatus(currentUser, "ACCEPTED")
+                : userRelationRepo.searchAcceptedConnections(currentUser, query.trim());
+
+        return relations.stream().map(ur -> {
+            User o = ur.getToUser();
+            String name = o.getFullName() != null ? o.getFullName() : o.getDisplayName();
+            return new UserRelationSuggestionDTO(
+                    ur.getId(), name, o.getEmail(), o.getPhone(), o.getProfilePicture(),
+                    o.getGender(),
+                    ur.getRelation().getRelationName(), null, "ACCEPTED");
+        }).collect(Collectors.toList());
     }
 
     @Transactional
