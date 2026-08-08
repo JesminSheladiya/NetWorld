@@ -114,16 +114,23 @@ function ContactsTable({ refreshTrigger }) {
         }
     };
 
-    const searchUsers = async () => {
-        if (!query.trim()) return;
-        setSearching(true);
-        setSearchResults([]);
-        try {
-            const res = await http.get(`${BASE}/user-relations/search-users?query=${encodeURIComponent(query)}`);
-            setSearchResults(res.data);
-        } catch { messageApi.error("Search failed!"); }
-        finally { setSearching(false); }
-    };
+    useEffect(() => {
+        const q = query.trim();
+        if (!q) {
+            setSearching(false);
+            setSearchResults([]);
+            return;
+        }
+        const handler = setTimeout(async () => {
+            setSearching(true);
+            try {
+                const res = await http.get(`${BASE}/user-relations/search-users?query=${encodeURIComponent(q)}`);
+                setSearchResults(res.data);
+            } catch { messageApi.error("Search failed!"); }
+            finally { setSearching(false); }
+        }, 400);
+        return () => clearTimeout(handler);
+    }, [query]);
 
     const sendUserRequest = async (email) => {
         if (!relMap[email]) { messageApi.warning("Select a relation first!"); return; }
@@ -428,26 +435,21 @@ function ContactsTable({ refreshTrigger }) {
                                                         <div className="discovery-search-bar">
                                                             <Input
                                                                 className="discovery-input"
-                                                                placeholder="Search by name or email..."
+                                                                placeholder="Search by name..."
                                                                 value={query}
+                                                                allowClear
                                                                 onChange={e => setQuery(e.target.value)}
-                                                                onPressEnter={searchUsers}
                                                                 prefix={<SearchOutlined style={{ color: "#64748b" }} />}
                                                             />
-                                                            <Button
-                                                                className="discovery-search-btn"
-                                                                loading={searching}
-                                                                onClick={searchUsers}
-                                                            >
-                                                                Search
-                                                            </Button>
                                                         </div>
 
                                                         {searchResults.length === 0 ? (
                                                             <div className="discovery-empty">
-                                                                <div className="discovery-empty-icon">{query ? "🔍" : "👥"}</div>
+                                                                <div className="discovery-empty-icon">{query.trim() ? "🔍" : "👥"}</div>
                                                                 <div className="discovery-empty-text">
-                                                                    {query ? "No users found matching your search" : "Search for someone to connect with"}
+                                                                    {query.trim()
+                                                                        ? "No users found matching your search"
+                                                                        : "Search for someone to connect with"}
                                                                 </div>
                                                             </div>
                                                         ) : (
