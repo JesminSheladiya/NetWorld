@@ -29,4 +29,20 @@ public interface UserRelationRepository extends JpaRepository<UserRelation, Long
             @Param("commonUser") User commonUser,
             @Param("me") User me
     );
+
+    @Query("""
+        SELECT ur FROM UserRelation ur
+        JOIN ur.relation r
+        WHERE ur.fromUser = :fromUser
+          AND ur.status = 'ACCEPTED'
+          AND (LOWER(ur.toUser.fullName)  LIKE LOWER(CONCAT('%', :query, '%'))
+            OR LOWER(ur.toUser.username)  LIKE LOWER(CONCAT('%', :query, '%'))
+            OR LOWER(ur.toUser.email)     LIKE LOWER(CONCAT('%', :query, '%'))
+            OR LOWER(ur.toUser.phone)     LIKE LOWER(CONCAT('%', :query, '%'))
+            OR LOWER(r.relationName)      LIKE LOWER(CONCAT('%', :query, '%')))
+    """)
+    List<UserRelation> searchAcceptedConnections(
+            @Param("fromUser") User fromUser,
+            @Param("query") String query
+    );
 }

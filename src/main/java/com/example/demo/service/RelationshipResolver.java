@@ -68,7 +68,11 @@ public class RelationshipResolver {
                 switch (cat.toUpperCase()) {
                     case "PARENT": 
                         nextV += 1; nextMaxV = Math.max(nextMaxV, nextV); 
-                        if (nextS == 2) nextS = 1;
+                        if (nextS == 2) {
+                            nextS = 1;
+                        } else if (nextS == 0 && curr.v == -1 && curr.maxV == 0) {
+                            nextS = 2; // Child's other parent is our Spouse
+                        }
                         break;
                     case "CHILD": 
                         nextV -= 1; 
